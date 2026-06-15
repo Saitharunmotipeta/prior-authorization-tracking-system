@@ -2,7 +2,7 @@
 
 ## Master Data APIs
 
-### GET /facilities
+### GET /facilities (endpoints)
 
 Purpose:
 Retrieve all healthcare facilities.
