@@ -1,83 +1,209 @@
-# API Endpoints
+# Final API Specification
 
-## 1. GET /facilities
+## Master Data APIs
+
+### GET /facilities
 
 Purpose:
-Fetch all healthcare facilities.
+Retrieve all healthcare facilities.
 
 ---
 
-## 2. GET /departments
+### GET /departments
 
 Purpose:
-Fetch all departments.
+Retrieve all departments.
 
 ---
 
-## 3. GET /patients/{id}
+### GET /patients/{id}
 
 Purpose:
-Fetch patient details along with provider and policy information.
+Retrieve patient demographics and insurance details.
 
 ---
 
-## 4. POST /encounters
+### GET /payers
 
 Purpose:
-Create a new encounter with document verification details and initial request status.
+Retrieve payer information, contact details, portal links, and turnaround times.
 
 ---
 
-## 5. GET /encounters
+### GET /cpt-codes
 
 Purpose:
-Fetch all encounters for dashboard display and filtering.
+Retrieve available CPT procedure codes.
 
 ---
 
-## 6. GET /encounters/{id}
+### GET /icd-codes
 
 Purpose:
-Fetch complete details of a specific encounter.
+Retrieve available ICD diagnosis codes.
 
 ---
 
-## 7. PATCH /encounters/{id}/status
+# Authorization Workflow APIs
+
+### Get/ Verify-Insurance-Eligibility
+
+### POST /encounters
 
 Purpose:
-Update encounter request status and automatically create encounter history logs.
+Create a new encounter.
+
+Includes:
+
+* Patient
+* Facility
+* Department
+* Document Verification Checklist
+* Condition Type
 
 ---
 
-## 8. POST /authorization-requests
+### GET /encounters
 
 Purpose:
-Create and store authorization request details including estimated amount and provider response.
+Retrieve authorization work queue.
+
+Supports Filtering:
+
+* Pending
+* Approved
+* Denied
+* Request More Information
+* Expired
+* Urgent
+* Normal
 
 ---
 
-## 9. GET /authorization-requests/{id}
+### GET /encounters/{id}
 
 Purpose:
-Fetch authorization request details for a specific encounter.
+Retrieve complete encounter details.
+
+Returns:
+
+* Encounter Details
+* Authorization Request
+* Services
+* Audit Timeline
+* Readiness Score
+* Risk Indicator
 
 ---
 
-## 10. POST /authorization-procedures
+### PATCH /encounters/{id}/status
 
 Purpose:
-Store procedure codes and expected amounts for authorization requests.
+Update authorization workflow status.
+
+Supported Statuses:
+
+* Pending
+* Approved
+* Denied
+* Request More Information
+* Expired
+
+Automatically:
+
+* Updates timestamps
+* Creates audit entry
+* Updates timeline
 
 ---
 
-## 11. GET /encounter-history/{encounterId}
+# Authorization Request APIs
+
+### POST /authorization-requests
 
 Purpose:
-Fetch complete encounter activity and status history.
+Create authorization request.
+
+Includes:
+
+* Payer
+* Priority
+* Estimated Amount
+* Submission Details
 
 ---
 
-## 12. GET /analytics/dashboard
+### POST /authorization-services
 
 Purpose:
-Fetch analytics metrics such as approvals, denials, pending requests, and turnaround time.
+Add CPT, ICD, estimated cost and notes.
+
+Supports:
+
+* Multiple services per authorization request.
+
+---
+
+# Audit & Timeline APIs
+
+### GET /audit-history/{encounterId}
+
+Purpose:
+Retrieve complete audit history.
+
+Returns:
+
+* Create Events
+* Update Events
+* Status Changes
+* Approval Actions
+* Denial Actions
+* Expiration Events
+
+---
+
+# Dashboard & Analytics APIs
+
+### GET /dashboard
+
+Purpose:
+Retrieve all dashboard metrics in a single response.
+
+Returns:
+
+Authorization Health Metrics:
+
+* Total Requests
+* Pending Requests
+* Approved Requests
+* Denied Requests
+* Expired Requests
+
+Operational Metrics:
+
+* Approval Rate
+* Denial Rate
+* Average Turnaround Time
+
+Readiness Metrics:
+
+* Average Readiness Score
+* High Risk Requests
+
+Expiration Metrics:
+
+* Expiring Today
+* Expiring Within 3 Days
+
+Provider Performance:
+
+* Top Payers
+* Slowest Payers
+
+Denial Analytics:
+
+* Top Denial Reasons
+
+Critical Queue:
+
+* Urgent Requests Pending Review

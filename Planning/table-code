@@ -19,6 +19,7 @@ Table Patient {
   mrn_number varchar [unique]
   full_name varchar
   dob date
+  age tinyint
   gender varchar
   phone_number varchar
   identification_type varchar
@@ -38,18 +39,30 @@ Table Payer {
   is_active boolean
 }
 
+Table Policy {
+  policy_id int [pk, increment]
+
+  patient_id int
+  payer_id int
+
+  policy_number varchar
+
+  policy_start_date date
+  policy_expiry_date date
+
+  is_active boolean
+
+  created_at datetime
+}
+
 Table CPTCode {
   cpt_code varchar [pk]
   cpt_description varchar
-  created_at datetime
-  is_active boolean
 }
 
 Table ICDCode {
   icd_code varchar [pk]
   icd_description varchar
-  created_at datetime
-  is_active boolean
 }
 
 Table Encounter {
@@ -80,7 +93,7 @@ Table Encounter {
 Table AuthorizationRequest {
   auth_id int [pk, increment]
 
-  encounter_id int
+  encounter_id int [unique]
   payer_id int
 
   priority varchar
@@ -113,13 +126,31 @@ Table AuthorizationService {
   created_at datetime
 }
 
+Table PeerToPeerReview {
+  peer_review_id int [pk, increment]
+
+  encounter_id int
+  auth_id int
+
+  request_reason text
+
+  scheduled_at datetime
+  completed_at datetime
+
+  review_status varchar
+
+  outcome_notes text
+
+  created_at datetime
+  updated_at datetime
+}
+
 Table AuditHistory {
   audit_id int [pk, increment]
 
   encounter_id int
   auth_id int
 
-  entity_name varchar
   entity_id varchar
 
   action_type varchar
@@ -137,6 +168,9 @@ Table AuditHistory {
 
 Ref: Department.facility_id > Facility.facility_id
 
+Ref: Policy.patient_id > Patient.patient_id
+Ref: Policy.payer_id > Payer.payer_id
+
 Ref: Encounter.patient_id > Patient.patient_id
 Ref: Encounter.facility_id > Facility.facility_id
 Ref: Encounter.department_id > Department.department_id
@@ -150,3 +184,6 @@ Ref: AuthorizationService.icd_code > ICDCode.icd_code
 
 Ref: AuditHistory.encounter_id > Encounter.encounter_id
 Ref: AuditHistory.auth_id > AuthorizationRequest.auth_id
+
+Ref: PeerToPeerReview.encounter_id > Encounter.encounter_id
+Ref: PeerToPeerReview.auth_id > AuthorizationRequest.auth_id
