@@ -1,0 +1,673 @@
+This is where many projects fail.
+
+People build:
+
+```text
+Controller
+↓
+Controller
+↓
+Controller
+```
+
+and then later realize:
+
+```text
+No architecture
+No audit
+No resilience
+No analytics
+```
+
+You already did the hard part (design). Now follow a strict build sequence.
+
+---
+
+# Phase 1 — Foundation
+
+Build once.
+
+Never touch again.
+
+## Step 1
+
+Create Solution
+
+```text
+PriorAuthorizationSystem.sln
+```
+
+Create Projects
+
+```text
+Specialist.API
+Payer.API
+Manager.API
+
+PriorAuthorization.Data
+PriorAuthorization.Shared
+```
+
+---
+
+## Step 2
+
+Create Shared Enums
+
+```text
+ConditionType
+
+RequestStatus
+
+Priority
+
+ReminderCategory
+
+ReminderStatus
+
+AuditActionType
+
+UserRole
+```
+
+Because entities depend on them.
+
+---
+
+## Step 3
+
+Create Entities
+
+```text
+Facility
+
+Department
+
+Patient
+
+Payer
+
+Policy
+
+Encounter
+
+AuthorizationRequest
+
+AuthorizationService
+
+Reminder
+
+AuditHistory
+```
+
+Don't create repositories yet.
+
+---
+
+## Step 4
+
+Create Configurations
+
+```text
+FacilityConfiguration
+
+PatientConfiguration
+
+...
+```
+
+Define:
+
+```text
+PKs
+
+FKs
+
+Indexes
+
+Constraints
+
+Datatypes
+```
+
+---
+
+## Step 5
+
+Create DbContext
+
+```text
+ApplicationDbContext
+```
+
+Register all entities.
+
+---
+
+## Step 6
+
+Migration
+
+```bash
+Add-Migration InitialCreate
+Update-Database
+```
+
+Verify tables.
+
+---
+
+# Phase 2 — Seed Data
+
+Do this BEFORE repositories.
+
+Create:
+
+```text
+10 Facilities
+
+50 Departments
+
+500 Patients
+
+20 Payers
+
+500 Policies
+
+1000 Encounters
+
+1000 Requests
+
+3000 Services
+
+5000 Audit Logs
+
+500 Reminders
+```
+
+Why?
+
+Because:
+
+```text
+Realistic testing
+```
+
+---
+
+# Phase 3 — Repository Layer
+
+Now create repositories.
+
+Not before.
+
+---
+
+## Generic Repository
+
+Optional.
+
+Personally:
+
+```text
+Skip Generic Repository
+```
+
+For this project.
+
+Create explicit repositories.
+
+---
+
+```text
+PatientRepository
+
+EncounterRepository
+
+AuthorizationRepository
+
+ReminderRepository
+
+AuditRepository
+
+DashboardRepository
+```
+
+---
+
+Repository responsibility:
+
+```text
+Database access only
+```
+
+Never:
+
+```text
+Risk logic
+
+Eligibility logic
+
+Analytics logic
+```
+
+inside repository.
+
+---
+
+# Phase 4 — Service Layer
+
+Most important layer.
+
+---
+
+## EligibilityService
+
+Implements:
+
+```text
+Policy Verification
+
+Insurance Eligibility
+```
+
+---
+
+## EncounterService
+
+Implements:
+
+```text
+Create Encounter
+
+Get Encounter
+
+Update Status
+```
+
+---
+
+## AuthorizationService
+
+Implements:
+
+```text
+Create Request
+
+Add Services
+```
+
+---
+
+## ReviewService
+
+Implements:
+
+```text
+Approve
+
+Deny
+
+Request More Info
+```
+
+---
+
+## ReminderService
+
+Implements:
+
+```text
+Notifications
+
+Peer Review Calls
+```
+
+---
+
+## AuditService
+
+Implements:
+
+```text
+Create Audit Entries
+```
+
+---
+
+## AnalyticsService
+
+Implements:
+
+```text
+Provider Performance
+
+Denial Analytics
+
+Dashboard Metrics
+```
+
+---
+
+# Phase 5 — Resilience
+
+Now.
+
+Not before.
+
+---
+
+# Where Resilience Applies
+
+## Database Calls
+
+Repository:
+
+```text
+Get Encounter
+```
+
+Database timeout?
+
+Retry.
+
+---
+
+Example:
+
+```text
+Retry
+3 Attempts
+```
+
+---
+
+## Analytics
+
+Heavy query.
+
+```text
+Dashboard Query
+```
+
+Timeout after:
+
+```text
+5 Seconds
+```
+
+Don't hang forever.
+
+---
+
+## Email Reminder
+
+SMTP Down?
+
+Fallback.
+
+---
+
+Example:
+
+```text
+Email Failed
+↓
+Create Reminder Record
+↓
+Log Audit
+```
+
+User still sees success.
+
+---
+
+# Where NOT To Use Resilience
+
+Don't put Polly everywhere.
+
+Not:
+
+```text
+Every Controller
+
+Every Method
+
+Every Query
+```
+
+Only around:
+
+```text
+Database
+
+Email
+
+External Calls
+```
+
+---
+
+# Phase 6 — Specialist API
+
+Build first.
+
+Because everything starts here.
+
+Order:
+
+```text
+GET Patient
+
+GET Eligibility
+
+POST Encounter
+
+POST AuthorizationRequest
+
+POST AuthorizationService
+
+GET Encounter
+
+PATCH Status
+```
+
+This validates:
+
+```text
+Patient
+
+Policy
+
+Encounter
+
+Request
+```
+
+flow.
+
+---
+
+# Phase 7 — Payer API
+
+Now.
+
+Build:
+
+```text
+GET Payers
+
+PATCH Review
+
+POST Reminder
+
+GET Reminder
+
+PATCH Reminder Status
+```
+
+Now full workflow works.
+
+---
+
+# Phase 8 — Audit
+
+Now implement.
+
+Every mutation:
+
+```text
+Create Encounter
+
+Create Request
+
+Update Status
+
+Review Request
+
+Reminder Created
+```
+
+must create:
+
+```text
+AuditHistory
+```
+
+entry.
+
+---
+
+# Phase 9 — Manager API
+
+Last.
+
+Because analytics needs data.
+
+Build:
+
+```text
+GET Dashboard
+
+GET AuditHistory
+
+GET Provider Performance
+
+GET Denial Analytics
+
+GET Readiness Score
+
+GET Risk Indicator
+
+GET Insights
+```
+
+---
+
+# Readiness Engine
+
+Build after APIs work.
+
+Example:
+
+```text
+5 Documents
+
+5 Verified
+
+Score = 100
+```
+
+---
+
+# Risk Engine
+
+Example:
+
+```text
+Urgent
++
+Missing Scan
+
+Risk = High
+```
+
+---
+
+# Phase 10 — Testing
+
+Test complete journey.
+
+---
+
+## Scenario
+
+```text
+Patient
+↓
+Eligibility Check
+↓
+Encounter
+↓
+Authorization
+↓
+Services
+↓
+Payer Review
+↓
+Reminder
+↓
+Audit
+↓
+Dashboard
+```
+
+If this works:
+
+```text
+Project is complete.
+```
+
+---
+
+# Final Build Order (Freeze This)
+
+```text
+1. Solution Structure
+
+2. Enums
+
+3. Entities
+
+4. Configurations
+
+5. DbContext
+
+6. Migration
+
+7. Seed Data
+
+8. Repositories
+
+9. Services
+
+10. Resilience
+
+11. Specialist API
+
+12. Payer API
+
+13. Audit Logic
+
+14. Manager API
+
+15. Readiness Engine
+
+16. Risk Engine
+
+17. Testing
+
+18. Documentation
+```
+
+This order minimizes rework because every layer depends only on layers that are already stable. Build it in this sequence and you'll rarely need to go back and redesign earlier pieces.

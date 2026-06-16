@@ -15,53 +15,80 @@ Table Department {
 }
 
 Table Patient {
-  patient_id int [pk, increment]
+  patient_id uuid [pk]
+
   mrn_number varchar [unique]
+
   full_name varchar
   dob date
+  age tinyint
+
   gender varchar
+
   phone_number varchar
+
   identification_type varchar
   identification_number varchar
+
   created_at datetime
+
   is_active boolean
 }
 
 Table Payer {
   payer_id int [pk, increment]
+
   payer_name varchar
+
   contact_number varchar
-  portal_link varchar
-  normal_tat_days int
-  urgent_tat_days int
+
+  payer_email varchar
+
+  normal_tat_days tinyint
+  urgent_tat_days tinyint
+
   created_at datetime
+
+  is_active boolean
+}
+
+Table Policy {
+  policy_id int [pk, increment]
+
+  patient_id uuid
+  payer_id int
+
+  policy_start_date date
+  policy_expiry_date date
+
   is_active boolean
 }
 
 Table CPTCode {
   cpt_code varchar [pk]
+
   cpt_description varchar
-  created_at datetime
-  is_active boolean
 }
 
 Table ICDCode {
   icd_code varchar [pk]
+
   icd_description varchar
-  created_at datetime
-  is_active boolean
 }
 
 Table Encounter {
   encounter_id int [pk, increment]
 
-  patient_id int
+  patient_id uuid
+
   facility_id int
   department_id int
 
-  condition_type varchar
-  verification_status varchar
-  request_status varchar
+  condition_type tinyint
+
+  verification_status tinyint
+
+  request_status tinyint
 
   identification_verified boolean
   prescription_verified boolean
@@ -80,13 +107,16 @@ Table Encounter {
 Table AuthorizationRequest {
   auth_id int [pk, increment]
 
-  encounter_id int
+  encounter_id int [unique]
+
   payer_id int
 
-  priority varchar
-  status varchar
+  priority tinyint
+
+  status tinyint
 
   estimated_total_amount decimal
+
   approved_amount decimal
 
   submitted_at datetime
@@ -113,22 +143,42 @@ Table AuthorizationService {
   created_at datetime
 }
 
+Table Reminder {
+  reminder_id int [pk, increment]
+
+  auth_id int
+
+  payer_id int
+
+  category tinyint
+
+  status tinyint
+
+  scheduled_at datetime
+
+  completed_at datetime
+
+  remarks text
+
+  updated_at datetime
+}
+
 Table AuditHistory {
   audit_id int [pk, increment]
 
   encounter_id int
   auth_id int
 
-  entity_name varchar
   entity_id varchar
 
-  action_type varchar
+  action_type tinyint
 
   old_value text
   new_value text
 
   performed_by_user varchar
-  performed_by_role varchar
+
+  performed_by_role tinyint
 
   remarks text
 
@@ -136,6 +186,9 @@ Table AuditHistory {
 }
 
 Ref: Department.facility_id > Facility.facility_id
+
+Ref: Policy.patient_id > Patient.patient_id
+Ref: Policy.payer_id > Payer.payer_id
 
 Ref: Encounter.patient_id > Patient.patient_id
 Ref: Encounter.facility_id > Facility.facility_id
@@ -148,5 +201,10 @@ Ref: AuthorizationService.auth_id > AuthorizationRequest.auth_id
 Ref: AuthorizationService.cpt_code > CPTCode.cpt_code
 Ref: AuthorizationService.icd_code > ICDCode.icd_code
 
+Ref: Reminder.auth_id > AuthorizationRequest.auth_id
+Ref: Reminder.payer_id > Payer.payer_id
+
 Ref: AuditHistory.encounter_id > Encounter.encounter_id
 Ref: AuditHistory.auth_id > AuthorizationRequest.auth_id
+
+..
