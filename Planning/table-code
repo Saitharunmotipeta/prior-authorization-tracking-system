@@ -207,4 +207,4 @@ Ref: Reminder.payer_id > Payer.payer_id
 Ref: AuditHistory.encounter_id > Encounter.encounter_id
 Ref: AuditHistory.auth_id > AuthorizationRequest.auth_id
 
-..
+...
