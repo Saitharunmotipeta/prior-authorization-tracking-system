@@ -1,0 +1,68 @@
+Dandige Harshitha 6/16/2026 3:42 PM • namespace PriorAuthorization.Shared.Enums
+{
+public enum ConditionType
+{
+Elective = 1,
+Urgent = 2,
+Emergency = 3
+}
+
+public enum RequestStatus
+{
+// Encounter
+Created = 1,
+VerificationFailed = 2,
+ReadyForSubmission = 3,
+
+// Authorization
+Submitted = 4,
+UnderReview = 5,
+AdditionalInfoRequired = 6,
+
+// Final
+Approved = 7,
+Denied = 8, ReSubmitted = 9, Draft=10
+}
+
+public enum Priority
+{
+Normal = 1,
+Urgent = 2,
+Emergency = 3
+}
+
+public enum ReminderCategory
+{
+FollowUp = 1,
+Appeal = 2,
+PeerReview = 3, Notification=4
+}
+
+public enum ReminderStatus
+{
+Pending = 1,
+Completed = 2
+}
+
+public enum AuditActionType
+{
+Created = 1,
+Updated = 2,
+
+Submitted = 3,
+Approved = 4,
+Denied = 5,
+
+RequestedMoreInfo = 6,
+
+ReminderCreated = 7,
+ReminderCompleted = 8
+}
+
+public enum UserRole
+{
+Specialist = 1,
+Payer = 2,
+Manager = 3
+}
+}
