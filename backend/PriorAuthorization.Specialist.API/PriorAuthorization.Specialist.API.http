@@ -1,0 +1,6 @@
+@PriorAuthorization.Specialist.API_HostAddress = http://localhost:5133
+
+GET {{PriorAuthorization.Specialist.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

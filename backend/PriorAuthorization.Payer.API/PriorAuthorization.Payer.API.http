@@ -1,0 +1,6 @@
+@PriorAuthorization.Payer.API_HostAddress = http://localhost:5278
+
+GET {{PriorAuthorization.Payer.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
