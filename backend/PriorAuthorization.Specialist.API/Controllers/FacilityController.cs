@@ -1,12 +1,26 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PriorAuthorization.Specialist.API.Services.Interfaces;
 
-namespace PriorAuthorization.Specialist.API.Controllers
+namespace Specialist.API.Controllers;
+
+[ApiController]
+[Route("api/facilities")]
+public class FacilityController : ControllerBase
 {
-    public class FAcilityController : Controller
+    private readonly IFacilityService _facilityService;
+
+    public FacilityController(
+        IFacilityService facilityService)
     {
-        public IActionResult Index()
-        {
-            return View();
-        }
+        _facilityService = facilityService;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetFacilities()
+    {
+        var facilities =
+            await _facilityService.GetFacilitiesAsync();
+
+        return Ok(facilities);
     }
 }
