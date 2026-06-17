@@ -23,7 +23,18 @@ public async Task<DashboardResponseDto> GetDashboardAsync(
 
     if (filter.FacilityId.HasValue)
     {
-        encounterQuery = encounterQuery.Where(x =>
+                var facilityExists =
+                    await _context.Facilities
+                        .AnyAsync(x =>
+                            x.FacilityId ==
+                            filter.FacilityId.Value);
+
+                if (!facilityExists)
+                {
+                    throw new Exception(
+                        $"Facility {filter.FacilityId} not found.");
+                }
+            encounterQuery = encounterQuery.Where(x =>
             x.FacilityId == filter.FacilityId.Value);
     }
 
@@ -61,10 +72,43 @@ public async Task<DashboardResponseDto> GetDashboardAsync(
         await authorizationQuery.CountAsync(x =>
             x.Status == (byte)RequestStatus.Expired);
 
-    decimal approvalRate = 0;
+    var approvedRevenue =
+        await authorizationQuery
+            .Where(x =>
+                x.Status == (byte)RequestStatus.Approved)
+            .SumAsync(x =>
+                x.ApprovedAmount ?? 0);
+
+    var reminderQuery =
+        _context.Reminders
+            .Where(x =>
+                encounterIds.Contains(
+                    x.Auth.EncounterId));
+
+    var totalReminders =
+        await reminderQuery.CountAsync();
+
+    var successfulReminders =
+    await reminderQuery.CountAsync(x =>
+        x.Status == (byte)ReminderStatus.Completed &&
+        x.Auth.Status ==
+            (byte)RequestStatus.Approved);
+
+        decimal approvalRate = 0;
     decimal denialRate = 0;
 
-    if (totalAuthorizationRequests > 0)
+     decimal reminderSuccessRate = 0;
+
+     if (totalReminders > 0)
+        {
+            reminderSuccessRate =
+                Math.Round(
+                    (decimal)successfulReminders /
+                    totalReminders * 100,
+                    2);
+        }
+
+        if (totalAuthorizationRequests > 0)
     {
         approvalRate = Math.Round(
             (decimal)approvedRequests /
@@ -77,24 +121,42 @@ public async Task<DashboardResponseDto> GetDashboardAsync(
             2);
     }
 
-    return new DashboardResponseDto
-    {
-        TotalEncounters = totalEncounters,
+        return new DashboardResponseDto
+        {
+            TotalEncounters = totalEncounters,
 
-        TotalAuthorizationRequests =
+            TotalAuthorizationRequests =
             totalAuthorizationRequests,
 
-        ApprovedRequests = approvedRequests,
+            ApprovedRequests =
+            approvedRequests,
 
-        DeniedRequests = deniedRequests,
+            DeniedRequests =
+            deniedRequests,
 
-        PendingRequests = pendingRequests,
+            PendingRequests =
+            pendingRequests,
 
-        ExpiredRequests = expiredRequests,
+            ExpiredRequests =
+            expiredRequests,
 
-        ApprovalRate = approvalRate,
+            ApprovalRate =
+            approvalRate,
 
-        DenialRate = denialRate
-    };
-}
+            DenialRate =
+            denialRate,
+
+            ApprovedRevenue =
+            approvedRevenue,
+
+            TotalReminders =
+            totalReminders,
+
+            SuccessfulReminders =
+            successfulReminders,
+
+            ReminderSuccessRate =
+            reminderSuccessRate
+        };
+    }
 }
