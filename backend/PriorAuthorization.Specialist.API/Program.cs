@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using PriorAuthorization.Shared.Data;
+using PriorAuthorization.Specialist.API.Services.Implementations;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
-using Specialist.API.Services.Implementations;
+using PriorAuthorizationSpecialist.API.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,11 +20,15 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Dependency Injection
+
+builder.Services.AddScoped<IEligibilityService, EligibilityService>();
+builder.Services.AddScoped<IFacilityService, FacilityService>();
+
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+
 // Basic Health Checks
 
-builder.Services.AddScoped<IFacilityService,FacilityService>();
-
-builder.Services.AddScoped<IDepartmentService,DepartmentService>();
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();

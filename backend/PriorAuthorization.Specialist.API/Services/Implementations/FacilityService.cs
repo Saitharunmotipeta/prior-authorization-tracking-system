@@ -4,7 +4,7 @@ using PriorAuthorization.Specialist.API.Services.Interfaces;
 using PriorAuthorizationSpecialist.API.DTOs;
 using System;
 
-namespace Specialist.API.Services.Implementations;
+namespace PriorAuthorization.Specialist.API.Services.Implementations;
 
 public class FacilityService : IFacilityService
 {

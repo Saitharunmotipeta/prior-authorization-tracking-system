@@ -5,7 +5,7 @@ using PriorAuthorization.Specialist.API.Services.Interfaces;
 
 using System;
 
-namespace Specialist.API.Services.Implementations;
+namespace PriorAuthorizationSpecialist.API.Services.Implementations;
 
 public class DepartmentService : IDepartmentService
 {
