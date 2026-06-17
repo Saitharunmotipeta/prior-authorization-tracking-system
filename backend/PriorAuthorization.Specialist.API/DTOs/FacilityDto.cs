@@ -1,6 +1,10 @@
-﻿namespace PriorAuthorization.Specialist.API.DTOs
+﻿namespace PriorAuthorizationSpecialist.API.DTOs;
+
+public class FacilityDto
 {
-    public class FacilityDto
-    {
-    }
+    public int FacilityId { get; set; }
+
+    public string FacilityName { get; set; } = string.Empty;
+
+    public string FacilityLocation { get; set; } = string.Empty;
 }
