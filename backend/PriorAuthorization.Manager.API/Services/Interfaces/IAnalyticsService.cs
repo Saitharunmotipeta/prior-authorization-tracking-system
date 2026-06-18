@@ -12,4 +12,19 @@ public interface IAnalyticsService
 
     Task<RevenueAtRiskDto>
         GetRevenueAtRiskAsync(int? facilityId);
+
+    Task<List<FacilityComparisonDto>>
+        GetFacilityComparisonAsync();
+
+    Task<List<TopPerformingPayerDto>>
+        GetTopPerformingPayersAsync(
+        int? facilityId);
+
+    Task<List<PoorPerformingPayerDto>>
+        GetPoorPerformingPayersAsync(
+        int? facilityId);
+
+    Task<List<DelayTrendDto>>
+        GetDelayTrendsAsync(
+        int? facilityId);
 }
