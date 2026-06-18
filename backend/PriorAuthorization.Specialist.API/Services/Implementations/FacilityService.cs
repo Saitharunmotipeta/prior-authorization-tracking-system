@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PriorAuthorization.Shared.Data;
+using PriorAuthorization.Shared.Exceptions;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 using PriorAuthorizationSpecialist.API.DTOs;
 using System;
@@ -15,18 +16,23 @@ public class FacilityService : IFacilityService
         _context = context;
     }
 
-    public async Task<IEnumerable<FacilityDto>>
-        GetFacilitiesAsync()
+    public async Task<IEnumerable<FacilityDto>> GetFacilitiesAsync()
     {
-        return await _context.Facilities
-            .Where(f => f.IsActive)
-            .OrderBy(f => f.FacilityId)
-            .Select(f => new FacilityDto
-            {
-                FacilityId = f.FacilityId,
-                FacilityName = f.FacilityName,
-                FacilityLocation = f.FacilityLocation
-            })
-            .ToListAsync();
+        var facilities = await _context.Facilities
+        .Where(f => f.IsActive)
+        .ToListAsync();
+
+        if (!facilities.Any())
+        {
+            throw new NotFoundException(
+                "No facilities found.");
+        }
+
+        return facilities.Select(f => new FacilityDto
+        {
+            FacilityId = f.FacilityId,
+            FacilityName = f.FacilityName,
+            FacilityLocation = f.FacilityLocation
+        });
     }
 }
