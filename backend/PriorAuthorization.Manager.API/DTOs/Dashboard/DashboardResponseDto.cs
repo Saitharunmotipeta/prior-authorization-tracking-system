@@ -25,4 +25,6 @@ public class DashboardResponseDto
     public int SuccessfulReminders { get; set; }
 
     public decimal ReminderSuccessRate { get; set; }
+
+
 }
