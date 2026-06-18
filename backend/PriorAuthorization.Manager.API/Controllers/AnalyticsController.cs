@@ -53,4 +53,54 @@ public class AnalyticsController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("facility-comparison")]
+    public async Task<IActionResult>
+    GetFacilityComparison()
+    {
+        var result =
+            await _analyticsService
+                .GetFacilityComparisonAsync();
+
+        return Ok(result);
+    }
+
+    [HttpGet("top-performing-payers")]
+    public async Task<IActionResult>
+    GetTopPerformingPayers(
+        [FromQuery] int? facilityId)
+    {
+        var result =
+            await _analyticsService
+                .GetTopPerformingPayersAsync(
+                    facilityId);
+
+        return Ok(result);
+    }
+
+    [HttpGet("poor-performing-payers")]
+    public async Task<IActionResult>
+    GetPoorPerformingPayers(
+        [FromQuery] int? facilityId)
+    {
+        var result =
+            await _analyticsService
+                .GetPoorPerformingPayersAsync(
+                    facilityId);
+
+        return Ok(result);
+    }
+
+    [HttpGet("delay-trends")]
+    public async Task<IActionResult>
+    GetDelayTrends(
+        [FromQuery] int? facilityId)
+    {
+        var result =
+            await _analyticsService
+                .GetDelayTrendsAsync(
+                    facilityId);
+
+        return Ok(result);
+    }
 }
