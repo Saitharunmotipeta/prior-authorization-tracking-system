@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PriorAuthorization.Manager.API.DTOs.Dashboard;
 using PriorAuthorization.Manager.API.Services.Interfaces;
+using PriorAuthorization.Shared.Exceptions;
 using PriorAuthorization.Shared.Data;
 using PriorAuthorization.Shared.Enums;
 
@@ -21,24 +22,33 @@ public async Task<DashboardResponseDto> GetDashboardAsync(
 {
     var encounterQuery = _context.Encounters.AsQueryable();
 
-    if (filter.FacilityId.HasValue)
-    {
-                var facilityExists =
-                    await _context.Facilities
-                        .AnyAsync(x =>
-                            x.FacilityId ==
-                            filter.FacilityId.Value);
+        if (filter.FacilityId.HasValue)
+        {
+            if (filter.FacilityId.Value <= 0)
+            {
+                throw new ValidationException(
+                    "FacilityId must be greater than zero.");
+            }
 
-                if (!facilityExists)
-                {
-                    throw new Exception(
-                        $"Facility {filter.FacilityId} not found.");
-                }
-            encounterQuery = encounterQuery.Where(x =>
-            x.FacilityId == filter.FacilityId.Value);
-    }
+            var facilityExists =
+                await _context.Facilities
+                    .AnyAsync(x =>
+                        x.FacilityId ==
+                        filter.FacilityId.Value);
 
-    var totalEncounters =
+            if (!facilityExists)
+            {
+                throw new NotFoundException(
+                    $"Facility {filter.FacilityId} not found.");
+            }
+
+            encounterQuery =
+                encounterQuery.Where(x =>
+                    x.FacilityId ==
+                    filter.FacilityId.Value);
+        }
+
+        var totalEncounters =
         await encounterQuery.CountAsync();
 
     var encounterIds =
@@ -94,32 +104,29 @@ public async Task<DashboardResponseDto> GetDashboardAsync(
         x.Auth.Status ==
             (byte)RequestStatus.Approved);
 
-        decimal approvalRate = 0;
-    decimal denialRate = 0;
+        var approvalRate =
+        totalAuthorizationRequests == 0
+            ? 0
+            : Math.Round(
+                (decimal)approvedRequests /
+                totalAuthorizationRequests * 100,
+                2);
 
-     decimal reminderSuccessRate = 0;
+        var denialRate =
+            totalAuthorizationRequests == 0
+                ? 0
+                : Math.Round(
+                    (decimal)deniedRequests /
+                    totalAuthorizationRequests * 100,
+                    2);
 
-     if (totalReminders > 0)
-        {
-            reminderSuccessRate =
-                Math.Round(
+        var reminderSuccessRate =
+            totalReminders == 0
+                ? 0
+                : Math.Round(
                     (decimal)successfulReminders /
                     totalReminders * 100,
                     2);
-        }
-
-        if (totalAuthorizationRequests > 0)
-    {
-        approvalRate = Math.Round(
-            (decimal)approvedRequests /
-            totalAuthorizationRequests * 100,
-            2);
-
-        denialRate = Math.Round(
-            (decimal)deniedRequests /
-            totalAuthorizationRequests * 100,
-            2);
-    }
 
         return new DashboardResponseDto
         {

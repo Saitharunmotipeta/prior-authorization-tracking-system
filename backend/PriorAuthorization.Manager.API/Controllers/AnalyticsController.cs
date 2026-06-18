@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PriorAuthorization.Manager.API.Services.Interfaces;
+using PriorAuthorization.Shared.Common;
+using PriorAuthorization.Manager.API.DTOs.Analytics;
 
 namespace PriorAuthorization.Manager.API.Controllers;
 
@@ -25,7 +27,11 @@ public class AnalyticsController : ControllerBase
                 .GetPayerPerformanceAsync(
                     facilityId);
 
-        return Ok(result);
+        return Ok(
+           ApiResponse<List<PayerPerformanceDto>>
+            .SuccessResponse(
+                result,
+                "Payer performance retrieved successfully"));
     }
 
     [HttpGet("slowest-payers")]
@@ -38,7 +44,11 @@ public class AnalyticsController : ControllerBase
                 .GetSlowestPayersAsync(
                     facilityId);
 
-        return Ok(result);
+        return Ok(
+            ApiResponse<List<SlowPayerDto>>
+                .SuccessResponse(
+                    result,
+                    "Slowest payers retrieved successfully"));
     }
 
     [HttpGet("revenue-at-risk")]
@@ -51,7 +61,11 @@ public class AnalyticsController : ControllerBase
                 .GetRevenueAtRiskAsync(
                     facilityId);
 
-        return Ok(result);
+          return Ok(
+            ApiResponse<RevenueAtRiskDto>
+                .SuccessResponse(
+                    result,
+                    "Revenue at risk retrieved successfully"));
     }
 
     [HttpGet("facility-comparison")]
@@ -62,7 +76,11 @@ public class AnalyticsController : ControllerBase
             await _analyticsService
                 .GetFacilityComparisonAsync();
 
-        return Ok(result);
+        return Ok(
+            ApiResponse<List<FacilityComparisonDto>>
+                .SuccessResponse(
+                    result,
+                    "Facility comparison retrieved successfully"));
     }
 
     [HttpGet("top-performing-payers")]
@@ -75,7 +93,11 @@ public class AnalyticsController : ControllerBase
                 .GetTopPerformingPayersAsync(
                     facilityId);
 
-        return Ok(result);
+        return Ok(
+            ApiResponse<List<TopPerformingPayerDto>>
+                .SuccessResponse(
+                    result,
+                    "Top performing payers retrieved successfully"));
     }
 
     [HttpGet("poor-performing-payers")]
@@ -88,7 +110,11 @@ public class AnalyticsController : ControllerBase
                 .GetPoorPerformingPayersAsync(
                     facilityId);
 
-        return Ok(result);
+        return Ok(
+            ApiResponse<List<PoorPerformingPayerDto>>
+                .SuccessResponse(
+                    result,
+                    "Poor performing payers retrieved successfully"));
     }
 
     [HttpGet("delay-trends")]
@@ -101,6 +127,10 @@ public class AnalyticsController : ControllerBase
                 .GetDelayTrendsAsync(
                     facilityId);
 
-        return Ok(result);
+        return Ok(
+            ApiResponse<List<DelayTrendDto>>
+                .SuccessResponse(
+                    result,
+                    "Delay trends retrieved successfully"));
     }
 }
