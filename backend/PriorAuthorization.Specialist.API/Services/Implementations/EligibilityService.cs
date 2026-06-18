@@ -29,15 +29,6 @@ public class EligibilityService : IEligibilityService
             };
         }
 
-        if (policy == null)
-        {
-            return new EligibilityResponseDto
-            {
-                IsEligible = false,
-                Message = "No insurance policy found."
-            };
-        }
-
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         bool eligible = today <= policy.PolicyExpiryDate;

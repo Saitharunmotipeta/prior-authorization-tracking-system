@@ -26,6 +26,8 @@ builder.Services.AddScoped<IEligibilityService, EligibilityService>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
 
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IPatientLookupService, PatientLookupService>();
+builder.Services.AddScoped<IEncounterService, EncounterService>();
 
 // Basic Health Checks
 
