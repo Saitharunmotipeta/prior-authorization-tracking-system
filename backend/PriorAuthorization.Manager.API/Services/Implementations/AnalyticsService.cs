@@ -31,6 +31,7 @@ public class AnalyticsService : IAnalyticsService
 
             var facilityExists =
                 await _context.Facilities
+                    .AsNoTracking()
                     .AnyAsync(x =>
                         x.FacilityId ==
                         facilityId.Value);
@@ -44,7 +45,7 @@ public class AnalyticsService : IAnalyticsService
 
         var query =
             _context.Encounters
-                .AsQueryable();
+                .AsNoTracking();
 
         if (facilityId.HasValue)
         {
@@ -65,6 +66,7 @@ public class AnalyticsService : IAnalyticsService
         List<int> encounterIds)
     {
         return _context.AuthorizationRequests
+            .AsNoTracking()
             .Include(x => x.Payer)
             .Where(x =>
                 encounterIds.Contains(
@@ -207,6 +209,7 @@ public class AnalyticsService : IAnalyticsService
 
         var deniedRequests =
             await _context.AuthorizationRequests
+                .AsNoTracking()
                 .Where(x =>
                     encounterIds.Contains(
                         x.EncounterId))
@@ -231,7 +234,13 @@ public class AnalyticsService : IAnalyticsService
     {
         var facilities =
             await _context.Facilities
+                .AsNoTracking()
                 .Include(x => x.Encounters)
+                .ToListAsync();
+
+        var allRequests =
+            await _context.AuthorizationRequests
+                .AsNoTracking()
                 .ToListAsync();
 
         var result =
@@ -245,11 +254,11 @@ public class AnalyticsService : IAnalyticsService
                     .ToList();
 
             var requests =
-                await _context.AuthorizationRequests
+                allRequests
                     .Where(x =>
                         encounterIds.Contains(
                             x.EncounterId))
-                    .ToListAsync();
+                    .ToList();
 
             var totalRequests =
                 requests.Count;
@@ -394,12 +403,16 @@ public class AnalyticsService : IAnalyticsService
                 x.ApprovedRequests)
             .ToList();
 
-        for (int i = 0; i < result.Count; i++)
+        var rankedResult =
+    result
+        .Select((item, index) =>
         {
-            result[i].Rank = i + 1;
-        }
+            item.Rank = index + 1;
+            return item;
+        })
+        .ToList();
 
-        return result;
+        return rankedResult;
     }
 
     public async Task<List<PoorPerformingPayerDto>>
@@ -465,8 +478,8 @@ public class AnalyticsService : IAnalyticsService
     }
 
     public async Task<List<DelayTrendDto>>
-        GetDelayTrendsAsync(
-            int? facilityId)
+    GetDelayTrendsAsync(
+        int? facilityId)
     {
         var encounterIds =
             await GetEncounterIdsAsync(
@@ -482,48 +495,38 @@ public class AnalyticsService : IAnalyticsService
             .GroupBy(x => x.Payer.PayerName)
             .Select(g =>
             {
+                var delays =
+                    g.Select(x =>
+                        (x.ReviewedAt!.Value -
+                         x.SubmittedAt!.Value)
+                        .TotalDays)
+                    .ToList();
+
                 return new DelayTrendDto
                 {
                     PayerName = g.Key,
 
                     ZeroToTwoDays =
-                        g.Count(x =>
-                            (x.ReviewedAt!.Value -
-                             x.SubmittedAt!.Value)
-                            .TotalDays <= 2),
+                        delays.Count(x =>
+                            x <= 2),
 
                     ThreeToFiveDays =
-                        g.Count(x =>
-                        {
-                            var days =
-                                (x.ReviewedAt!.Value -
-                                 x.SubmittedAt!.Value)
-                                .TotalDays;
-
-                            return days > 2 &&
-                                   days <= 5;
-                        }),
+                        delays.Count(x =>
+                            x > 2 &&
+                            x <= 5),
 
                     SixToTenDays =
-                        g.Count(x =>
-                        {
-                            var days =
-                                (x.ReviewedAt!.Value -
-                                 x.SubmittedAt!.Value)
-                                .TotalDays;
-
-                            return days > 5 &&
-                                   days <= 10;
-                        }),
+                        delays.Count(x =>
+                            x > 5 &&
+                            x <= 10),
 
                     MoreThanTenDays =
-                        g.Count(x =>
-                            (x.ReviewedAt!.Value -
-                             x.SubmittedAt!.Value)
-                            .TotalDays > 10)
+                        delays.Count(x =>
+                            x > 10)
                 };
             })
-            .OrderBy(x => x.PayerName)
+            .OrderBy(x =>
+                x.PayerName)
             .ToList();
 
         return result;

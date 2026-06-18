@@ -17,10 +17,13 @@ public class DashboardService : IDashboardService
         _context = context;
     }
 
-public async Task<DashboardResponseDto> GetDashboardAsync(
-    DashboardFilterDto filter)
-{
-    var encounterQuery = _context.Encounters.AsQueryable();
+    public async Task<DashboardResponseDto> GetDashboardAsync(
+        DashboardFilterDto filter)
+    {
+        var encounterQuery =
+            _context.Encounters
+                .AsNoTracking()
+                .AsQueryable();
 
         if (filter.FacilityId.HasValue)
         {
@@ -32,6 +35,7 @@ public async Task<DashboardResponseDto> GetDashboardAsync(
 
             var facilityExists =
                 await _context.Facilities
+                    .AsNoTracking()
                     .AnyAsync(x =>
                         x.FacilityId ==
                         filter.FacilityId.Value);
@@ -49,68 +53,82 @@ public async Task<DashboardResponseDto> GetDashboardAsync(
         }
 
         var totalEncounters =
-        await encounterQuery.CountAsync();
+            await encounterQuery.CountAsync();
 
-    var encounterIds =
-        await encounterQuery
-            .Select(x => x.EncounterId)
-            .ToListAsync();
+        var encounterIds =
+            await encounterQuery
+                .Select(x => x.EncounterId)
+                .ToListAsync();
 
-    var authorizationQuery =
-        _context.AuthorizationRequests
-            .Where(x =>
-                encounterIds.Contains(x.EncounterId));
+        var authorizationRequests =
+            await _context.AuthorizationRequests
+                .AsNoTracking()
+                .Where(x =>
+                    encounterIds.Contains(
+                        x.EncounterId))
+                .ToListAsync();
 
-    var totalAuthorizationRequests =
-        await authorizationQuery.CountAsync();
+        var totalAuthorizationRequests =
+            authorizationRequests.Count;
 
-    var approvedRequests =
-        await authorizationQuery.CountAsync(x =>
-            x.Status == (byte)RequestStatus.Approved);
+        var approvedRequests =
+            authorizationRequests.Count(x =>
+                x.Status ==
+                (byte)RequestStatus.Approved);
 
-    var deniedRequests =
-        await authorizationQuery.CountAsync(x =>
-            x.Status == (byte)RequestStatus.Denied);
+        var deniedRequests =
+            authorizationRequests.Count(x =>
+                x.Status ==
+                (byte)RequestStatus.Denied);
 
-    var pendingRequests =
-        await authorizationQuery.CountAsync(x =>
-            x.Status == (byte)RequestStatus.UnderReview ||
-            x.Status == (byte)RequestStatus.AdditionalInfoRequired ||
-            x.Status == (byte)RequestStatus.ReSubmitted);
+        var pendingRequests =
+            authorizationRequests.Count(x =>
+                x.Status ==
+                (byte)RequestStatus.UnderReview ||
+                x.Status ==
+                (byte)RequestStatus.AdditionalInfoRequired ||
+                x.Status ==
+                (byte)RequestStatus.ReSubmitted);
 
-    var expiredRequests =
-        await authorizationQuery.CountAsync(x =>
-            x.Status == (byte)RequestStatus.Expired);
+        var expiredRequests =
+            authorizationRequests.Count(x =>
+                x.Status ==
+                (byte)RequestStatus.Expired);
 
-    var approvedRevenue =
-        await authorizationQuery
-            .Where(x =>
-                x.Status == (byte)RequestStatus.Approved)
-            .SumAsync(x =>
-                x.ApprovedAmount ?? 0);
+        var approvedRevenue =
+            authorizationRequests
+                .Where(x =>
+                    x.Status ==
+                    (byte)RequestStatus.Approved)
+                .Sum(x =>
+                    x.ApprovedAmount ?? 0);
 
-    var reminderQuery =
-        _context.Reminders
-            .Where(x =>
-                encounterIds.Contains(
-                    x.Auth.EncounterId));
+        var reminders =
+            await _context.Reminders
+                .AsNoTracking()
+                .Include(x => x.Auth)
+                .Where(x =>
+                    encounterIds.Contains(
+                        x.Auth.EncounterId))
+                .ToListAsync();
 
-    var totalReminders =
-        await reminderQuery.CountAsync();
+        var totalReminders =
+            reminders.Count;
 
-    var successfulReminders =
-    await reminderQuery.CountAsync(x =>
-        x.Status == (byte)ReminderStatus.Completed &&
-        x.Auth.Status ==
-            (byte)RequestStatus.Approved);
+        var successfulReminders =
+            reminders.Count(x =>
+                x.Status ==
+                (byte)ReminderStatus.Completed &&
+                x.Auth.Status ==
+                (byte)RequestStatus.Approved);
 
         var approvalRate =
-        totalAuthorizationRequests == 0
-            ? 0
-            : Math.Round(
-                (decimal)approvedRequests /
-                totalAuthorizationRequests * 100,
-                2);
+            totalAuthorizationRequests == 0
+                ? 0
+                : Math.Round(
+                    (decimal)approvedRequests /
+                    totalAuthorizationRequests * 100,
+                    2);
 
         var denialRate =
             totalAuthorizationRequests == 0
@@ -130,40 +148,41 @@ public async Task<DashboardResponseDto> GetDashboardAsync(
 
         return new DashboardResponseDto
         {
-            TotalEncounters = totalEncounters,
+            TotalEncounters =
+                totalEncounters,
 
             TotalAuthorizationRequests =
-            totalAuthorizationRequests,
+                totalAuthorizationRequests,
 
             ApprovedRequests =
-            approvedRequests,
+                approvedRequests,
 
             DeniedRequests =
-            deniedRequests,
+                deniedRequests,
 
             PendingRequests =
-            pendingRequests,
+                pendingRequests,
 
             ExpiredRequests =
-            expiredRequests,
+                expiredRequests,
 
             ApprovalRate =
-            approvalRate,
+                approvalRate,
 
             DenialRate =
-            denialRate,
+                denialRate,
 
             ApprovedRevenue =
-            approvedRevenue,
+                approvedRevenue,
 
             TotalReminders =
-            totalReminders,
+                totalReminders,
 
             SuccessfulReminders =
-            successfulReminders,
+                successfulReminders,
 
             ReminderSuccessRate =
-            reminderSuccessRate
+                reminderSuccessRate
         };
     }
 }
