@@ -28,15 +28,6 @@ public class EligibilityService : IEligibilityService
                 "Patient not found.");
         }
 
-        var policy = await _context.Policies
-            .FirstOrDefaultAsync(p => p.PatientId == patientId);
-
-        if (policy == null)
-        {
-            throw new NotFoundException(
-                "No insurance policy found.");
-        }
-
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         bool eligible =
