@@ -28,7 +28,6 @@
     <Folder Include="Constants\" />
     <Folder Include="Entities\" />
     <Folder Include="Data\" />
-    <Folder Include="Common\" />
   </ItemGroup>
 
 </Project>
