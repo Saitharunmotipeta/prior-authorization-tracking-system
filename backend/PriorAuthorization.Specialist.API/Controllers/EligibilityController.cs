@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PriorAuthorization.Shared.Common;
+using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 namespace PriorAuthorization.Specialist.API.Controllers;
 
@@ -13,10 +15,17 @@ public class EligibilityController : ControllerBase
         _eligibilityService = eligibilityService;
     }
 
-    [HttpGet("{patientId:guid}")]
-    public async Task<IActionResult> VerifyEligibility(Guid patientId)
+    [HttpGet("eligibility/{patientId}")]
+    public async Task<IActionResult>VerifyEligibility(Guid patientId)
     {
-        var result = await _eligibilityService.VerifyEligibilityAsync(patientId);
-        return Ok(result);
+        var result =
+            await _eligibilityService
+                .VerifyEligibilityAsync(patientId);
+
+        return Ok(
+            ApiResponse<EligibilityResponseDto>
+                .SuccessResponse(
+                    result,
+                    "Eligibility verification completed."));
     }
 }

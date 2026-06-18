@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PriorAuthorization.Shared.Data;
-using PriorAuthorization.Shared.Entities;
+using PriorAuthorization.Shared.Exceptions;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 
@@ -22,16 +22,14 @@ public class EligibilityService : IEligibilityService
 
         if (policy == null)
         {
-            return new EligibilityResponseDto
-            {
-                IsEligible = false,
-                Message = "Patient not found."
-            };
+            throw new NotFoundException("Insurance policy not found.");
         }
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        bool eligible = today <= policy.PolicyExpiryDate;
+        bool eligible =
+            today >= policy.PolicyStartDate &&
+            today <= policy.PolicyExpiryDate;
 
         return new EligibilityResponseDto
         {

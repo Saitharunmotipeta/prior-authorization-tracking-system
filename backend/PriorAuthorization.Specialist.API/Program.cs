@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PriorAuthorization.Shared.Data;
+using PriorAuthorization.Shared.Middleware;
 using PriorAuthorization.Specialist.API.Services.Implementations;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 using PriorAuthorizationSpecialist.API.Services.Implementations;
@@ -46,6 +47,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.MapControllers();
 
