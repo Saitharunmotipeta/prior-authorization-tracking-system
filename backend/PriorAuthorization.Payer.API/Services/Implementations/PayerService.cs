@@ -17,54 +17,83 @@ public class PayerService : IPayerService
         _logger = logger;
     }
 
-    public async Task<List<RequestLists>> GetAuthorizationRequests(
-        int payerId,
-        RequestsFilter filter)
-    {
-        _logger.LogInformation("Fetching authorization requests for payer {PayerId}", payerId);
 
-       
-        var query = _context.AuthorizationRequests
+    public async Task<List<FacilityDto>> GetFacilities()
+    {
+        _logger.LogInformation("Fetching facilities with pending request counts");
+
+        var result = await _context.Facilities
+            .AsNoTracking()
+            .Select(f => new FacilityDto
+            {
+                FacilityId = f.FacilityId,
+                FacilityName = f.FacilityName,
+
+                // ✅ Count pending requests
+                PendingCount = _context.AuthorizationRequests
+                    .Count(a =>
+                        a.Encounter.FacilityId == f.FacilityId &&
+
+                        (
+                            a.Status == (byte)RequestStatus.Submitted ||
+                            a.Status == (byte)RequestStatus.UnderReview ||
+                            a.Status == (byte)RequestStatus.AdditionalInfoRequired
+                        )
+                    )
+            })
+            .ToListAsync();
+
+        _logger.LogInformation("Fetched {Count} facilities", result.Count);
+
+        return result;
+    }
+
+
+
+    public async Task<List<RequestLists>> GetRequestsByFacility(int facilityId)
+    {
+        var result = await _context.AuthorizationRequests
             .AsNoTracking()
             .Include(a => a.Encounter)
                 .ThenInclude(e => e.Patient)
             .Include(a => a.Encounter.Facility)
-            .Where(a => a.PayerId == payerId);
+            .Where(a =>
+                a.Encounter.FacilityId == facilityId &&
 
-       
+                // ✅ Only pending
+                (
+                    a.Status == (byte)RequestStatus.Submitted ||
+                    a.Status == (byte)RequestStatus.UnderReview ||
+                    a.Status == (byte)RequestStatus.AdditionalInfoRequired
+                )
+            )
 
-        if (filter?.ConditionType != null)
-        {
-            query = query.Where(a =>
-                (int)a.Encounter.ConditionType == filter.ConditionType);
-        }
-
-        if (filter?.FacilityId != null)
-        {
-            query = query.Where(a =>
-                a.Encounter.FacilityId == filter.FacilityId);
-        }
-
-
-       
-        var result = await query
-            .Select(a => new RequestLists
+            // ✅ Sorting Logic
+            .Select(a => new
             {
-                AuthId = a.AuthId,
-                EncounterId = a.EncounterId,
-                PatientName = a.Encounter.Patient.FullName,
-                FacilityName = a.Encounter.Facility.FacilityName,
-                ConditionType = a.Encounter.ConditionType.ToString(),
-                Priority = a.Priority.ToString(),
-                Status = a.Status.ToString(),
-                EstimatedAmount = a.EstimatedTotalAmount,
-                SubmittedAt = a.SubmittedAt
+                Data = new RequestLists
+                {
+                    AuthId = a.AuthId,
+                    EncounterId = a.EncounterId,
+                    PatientName = a.Encounter.Patient.FullName,
+                    FacilityName = a.Encounter.Facility.FacilityName,
+                    ConditionType = a.Encounter.ConditionType.ToString(),
+                    Priority = a.Priority.ToString(),
+                    Status = a.Status.ToString(),
+                    EstimatedAmount = a.EstimatedTotalAmount,
+                    SubmittedAt = a.SubmittedAt
+                },
+                ConditionOrder = a.Encounter.ConditionType
             })
-            .OrderByDescending(x => x.SubmittedAt) 
-            .ToListAsync();
 
-        _logger.LogInformation("Fetched {Count} records for payer {PayerId}",
-            result.Count, payerId);
+            
+            .OrderByDescending(x => x.ConditionOrder)
+
+           
+            .ThenByDescending(x => x.Data.SubmittedAt)
+
+            .Select(x => x.Data)
+            .ToListAsync();
 
         return result;
     }
@@ -154,41 +183,75 @@ public class PayerService : IPayerService
             return false;
         }
 
-        // ✅ Handle actions
+        // ✅ Capture OLD values for audit
+        var oldStatus = auth.Status;
+        var oldApprovedAmount = auth.ApprovedAmount;
+
+        // ✅ Handle Actions
         switch (dto.Action)
         {
             case ReviewActionType.Approve:
+
+                // ✅ VALIDATION
+                if (!dto.ApprovedAmount.HasValue)
+                    throw new Exception("Approved amount is required for approval");
+
+                if (dto.ApprovedAmount > auth.EstimatedTotalAmount)
+                    throw new Exception("Approved amount cannot be greater than estimated amount");
+
                 auth.Status = (byte)RequestStatus.Approved;
                 auth.ApprovedAmount = dto.ApprovedAmount;
                 auth.ReviewedAt = DateTime.UtcNow;
                 break;
+
 
             case ReviewActionType.Deny:
                 auth.Status = (byte)RequestStatus.Denied;
                 auth.ReviewedAt = DateTime.UtcNow;
                 break;
 
+
             case ReviewActionType.RequestMoreInfo:
                 auth.Status = (byte)RequestStatus.AdditionalInfoRequired;
+                auth.ReviewedAt = DateTime.UtcNow;
                 break;
+
 
             default:
                 throw new Exception("Invalid review action");
         }
-        // ✅ Audit record (VERY IMPORTANT ✅)
-        if (!string.IsNullOrEmpty(dto.Remarks))
-        {
-            _context.AuditHistories.Add(new AuditHistory
-            {
-                EncounterId = auth.EncounterId,
-                AuthId = auth.AuthId,
-                ActionType = (byte)dto.Action,
-                Remarks = dto.Remarks,
-                CreatedAt = DateTime.UtcNow
-            });
-        }
 
+        // ✅ Always update UpdatedAt
         auth.UpdatedAt = DateTime.UtcNow;
+
+        // ✅ CREATE AUDIT ENTRY (VERY IMPORTANT)
+        var audit = new AuditHistory
+        {
+            EncounterId = auth.EncounterId,
+            AuthId = auth.AuthId,
+
+            ActionType = dto.Action switch
+            {
+                ReviewActionType.Approve => (byte)AuditActionType.Approved,
+                ReviewActionType.Deny => (byte)AuditActionType.Denied,
+                ReviewActionType.RequestMoreInfo => (byte)AuditActionType.RequestedMoreInfo,
+                _ => (byte)AuditActionType.Updated
+            },
+
+            // ✅ OLD values
+            OldValue = $"Status: {(RequestStatus)oldStatus}, ApprovedAmount: {oldApprovedAmount}",
+
+            // ✅ NEW values
+            NewValue = $"Status: {(RequestStatus)auth.Status}, ApprovedAmount: {auth.ApprovedAmount}",
+
+            PerformedByRole = (byte)UserRole.Payer,
+
+            Remarks = dto.Remarks,
+
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.AuditHistories.Add(audit);
 
         await _context.SaveChangesAsync();
 
@@ -198,4 +261,90 @@ public class PayerService : IPayerService
 
         return true;
     }
+
+    public async Task<List<RequestLists>> GetEmergencyRequests()
+    {
+        _logger.LogInformation("Fetching emergency pending requests");
+
+        var result = await _context.AuthorizationRequests
+            .AsNoTracking()
+            .Include(a => a.Encounter)
+                .ThenInclude(e => e.Patient)
+            .Include(a => a.Encounter.Facility)
+
+            // ✅ Filter: Emergency + Pending
+            .Where(a =>
+    a.Encounter.ConditionType == (byte)ConditionType.Emergency &&
+
+    (
+        a.Status == (byte)RequestStatus.Submitted ||
+        a.Status == (byte)RequestStatus.UnderReview ||
+        a.Status == (byte)RequestStatus.AdditionalInfoRequired
+    )
+)
+            // ✅ Projection
+            .Select(a => new RequestLists
+            {
+                AuthId = a.AuthId,
+                EncounterId = a.EncounterId,
+                PatientName = a.Encounter.Patient.FullName,
+                FacilityName = a.Encounter.Facility.FacilityName,
+                ConditionType = a.Encounter.ConditionType.ToString(),
+                Priority = a.Priority.ToString(),
+                Status = a.Status.ToString(),
+                EstimatedAmount = a.EstimatedTotalAmount,
+                SubmittedAt = a.SubmittedAt
+            })
+
+            // ✅ Sort latest first
+            .OrderByDescending(x => x.SubmittedAt)
+
+            .ToListAsync();
+
+        _logger.LogInformation("Fetched {Count} emergency requests", result.Count);
+
+        return result;
+    }
+
+
+
+    public async Task<ReminderListResponseDto> GetReminders()
+    {
+        _logger.LogInformation("Fetching reminders with pending count");
+
+        var reminders = await _context.Reminders
+            .AsNoTracking()
+            .OrderBy(r => r.Status)                 // Pending first
+            .ThenByDescending(r => r.ScheduledAt)
+            .ToListAsync();
+
+        // ✅ Count only pending
+        var pendingCount = reminders.Count(r =>
+    r.Status == (byte)ReminderStatus.Requested ||
+    r.Status == (byte)ReminderStatus.Scheduled
+);
+
+        // ✅ Map data
+        var data = reminders.Select(r => new ReminderDto
+        {
+            ReminderId = r.ReminderId,
+            AuthId = r.AuthId,
+
+            Category = ((ReminderCategory)r.Category).ToString(),
+            Status = ((ReminderStatus)r.Status).ToString(),
+
+            ScheduledAt = r.ScheduledAt,
+            CompletedAt = r.CompletedAt,
+
+            Remarks = r.Remarks,
+            UpdatedAt = r.UpdatedAt
+        }).ToList();
+
+        return new ReminderListResponseDto
+        {
+            PendingCount = pendingCount,
+            Data = data
+        };
+    }
+
 }

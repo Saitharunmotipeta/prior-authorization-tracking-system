@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PriorAuthorization.Payer.API.Services.Interfaces;
 using PriorAuthorization.Payer.API.DTOs;
+using PriorAuthorization.Shared.Enums;
 
 namespace PriorAuthorization.Payer.API.Controllers
 {
@@ -19,22 +20,21 @@ namespace PriorAuthorization.Payer.API.Controllers
             _logger = logger;
         }
 
-        
-        [HttpGet("{payerId}/authorization-requests")]
-        public async Task<IActionResult> GetAuthorizationRequests(
-            int payerId,
-            [FromQuery] RequestsFilter filter)
-        {
-            _logger.LogInformation(
-                "Fetching authorization requests for PayerId: {PayerId} with filters {@Filter}",
-                payerId, filter);
 
-            var result = await _payerService.GetAuthorizationRequests(payerId, filter);
+        [HttpGet("facilities")]
+        public async Task<IActionResult> GetFacilities()
+        {
+            var facilities = await _payerService.GetFacilities();
+            return Ok(facilities);
+        }
+
+        [HttpGet("facilities/{facilityId}/authorization-requests")]
+        public async Task<IActionResult> GetRequestsByFacility(int facilityId)
+        {
+            var result = await _payerService.GetRequestsByFacility(facilityId);
 
             if (result == null || !result.Any())
-            {
-                return NoContent(); 
-            }
+                return NoContent();
 
             return Ok(result);
         }
@@ -77,5 +77,33 @@ namespace PriorAuthorization.Payer.API.Controllers
             return Ok("Review completed successfully");
         }
 
+
+        [HttpGet("emergency")]
+        public async Task<IActionResult> GetEmergencyRequests()
+        {
+            var result = await _payerService.GetEmergencyRequests();
+
+            if (result == null || !result.Any())
+                return NoContent();
+
+            return Ok(result);
+        }
+
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetReminders()
+        {
+            _logger.LogInformation("Fetching all reminders");
+
+            var result = await _payerService.GetReminders();
+
+            if (result == null || !result.Data.Any())
+                return NoContent();
+
+            return Ok(result);
+        }
+
+
     }
-    }
+}
