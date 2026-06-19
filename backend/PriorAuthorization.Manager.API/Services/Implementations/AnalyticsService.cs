@@ -2,7 +2,9 @@
 using PriorAuthorization.Manager.API.DTOs.Analytics;
 using PriorAuthorization.Manager.API.Services.Interfaces;
 using PriorAuthorization.Shared.Data;
+using PriorAuthorization.Shared.Entities;
 using PriorAuthorization.Shared.Enums;
+using PriorAuthorization.Shared.Exceptions;
 
 namespace PriorAuthorization.Manager.API.Services.Implementations;
 
@@ -16,116 +18,151 @@ public class AnalyticsService : IAnalyticsService
         _context = context;
     }
 
-public async Task<List<PayerPerformanceDto>>
-    GetPayerPerformanceAsync(int? facilityId)
-{
-    var encounterQuery =
-        _context.Encounters.AsQueryable();
-
-    if (facilityId.HasValue)
+    private async Task<List<int>> GetEncounterIdsAsync(
+    int? facilityId)
     {
-        encounterQuery =
-            encounterQuery.Where(x =>
-                x.FacilityId ==
-                facilityId.Value);
-    }
-
-    var encounterIds =
-        await encounterQuery
-            .Select(x => x.EncounterId)
-            .ToListAsync();
-
-    var requests =
-        await _context.AuthorizationRequests
-            .Include(x => x.Payer)
-            .Where(x =>
-                encounterIds.Contains(
-                    x.EncounterId))
-            .ToListAsync();
-
-    var result =
-        requests
-        .GroupBy(x => x.Payer.PayerName)
-        .Select(g =>
+        if (facilityId.HasValue)
         {
-            var total =
-                g.Count();
-
-            var approved =
-                g.Count(x =>
-                    x.Status ==
-                    (byte)RequestStatus.Approved);
-
-            var denied =
-                g.Count(x =>
-                    x.Status ==
-                    (byte)RequestStatus.Denied);
-
-            var pending =
-                g.Count(x =>
-                    x.Status ==
-                    (byte)RequestStatus.UnderReview ||
-                    x.Status ==
-                    (byte)RequestStatus.AdditionalInfoRequired ||
-                    x.Status ==
-                    (byte)RequestStatus.ReSubmitted);
-
-            return new PayerPerformanceDto
+            if (facilityId.Value <= 0)
             {
-                PayerName = g.Key,
+                throw new ValidationException(
+                    "FacilityId must be greater than zero.");
+            }
 
-                TotalRequests = total,
+            var facilityExists =
+                await _context.Facilities
+                    .AsNoTracking()
+                    .AnyAsync(x =>
+                        x.FacilityId ==
+                        facilityId.Value);
 
-                ApprovedRequests = approved,
+            if (!facilityExists)
+            {
+                throw new NotFoundException(
+                    $"Facility {facilityId} not found.");
+            }
+        }
 
-                DeniedRequests = denied,
-
-                PendingRequests = pending,
-
-                ApprovalRate =
-                    total == 0
-                        ? 0
-                        : Math.Round(
-                            (decimal)approved /
-                            total * 100,
-                            2)
-            };
-        })
-        .OrderByDescending(x =>
-            x.ApprovalRate)
-        .ToList();
-
-    return result;
-    }
-
-    public async Task<List<SlowPayerDto>>
-    GetSlowestPayersAsync(int? facilityId)
-    {
-        var encounterQuery =
-            _context.Encounters.AsQueryable();
+        var query =
+            _context.Encounters
+                .AsNoTracking();
 
         if (facilityId.HasValue)
         {
-            encounterQuery =
-                encounterQuery.Where(x =>
+            query =
+                query.Where(x =>
                     x.FacilityId ==
                     facilityId.Value);
         }
 
+        return await query
+            .Select(x =>
+                x.EncounterId)
+            .ToListAsync();
+    }
+
+    private IQueryable<AuthorizationRequest>
+    GetAuthorizationRequestsQuery(
+        List<int> encounterIds)
+    {
+        return _context.AuthorizationRequests
+            .AsNoTracking()
+            .Include(x => x.Payer)
+            .Where(x =>
+                encounterIds.Contains(
+                    x.EncounterId));
+    }
+
+    private IQueryable<AuthorizationRequest>
+    GetReviewedAuthorizationRequestsQuery(
+        List<int> encounterIds)
+    {
+        return GetAuthorizationRequestsQuery(
+                encounterIds)
+            .Where(x =>
+                x.SubmittedAt.HasValue &&
+                x.ReviewedAt.HasValue);
+    }
+
+    public async Task<List<PayerPerformanceDto>>
+    GetPayerPerformanceAsync(
+        int? facilityId)
+    {
         var encounterIds =
-            await encounterQuery
-                .Select(x => x.EncounterId)
-                .ToListAsync();
+            await GetEncounterIdsAsync(
+                facilityId);
 
         var requests =
-            await _context.AuthorizationRequests
-                .Include(x => x.Payer)
-                .Where(x =>
-                    encounterIds.Contains(
-                        x.EncounterId))
-                .Where(x =>
-                    x.SubmittedAt.HasValue &&
-                    x.ReviewedAt.HasValue)
+            await GetAuthorizationRequestsQuery(
+                encounterIds)
+                .ToListAsync();
+
+        var result =
+            requests
+            .GroupBy(x => x.Payer.PayerName)
+            .Select(g =>
+            {
+                var total =
+                    g.Count();
+
+                var approved =
+                    g.Count(x =>
+                        x.Status ==
+                        (byte)RequestStatus.Approved);
+
+                var denied =
+                    g.Count(x =>
+                        x.Status ==
+                        (byte)RequestStatus.Denied);
+
+                var pending =
+                    g.Count(x =>
+                        x.Status ==
+                        (byte)RequestStatus.UnderReview ||
+                        x.Status ==
+                        (byte)RequestStatus.AdditionalInfoRequired ||
+                        x.Status ==
+                        (byte)RequestStatus.ReSubmitted);
+
+                return new PayerPerformanceDto
+                {
+                    PayerName = g.Key,
+
+                    TotalRequests = total,
+
+                    ApprovedRequests = approved,
+
+                    DeniedRequests = denied,
+
+                    PendingRequests = pending,
+
+                    ApprovalRate =
+                        total == 0
+                            ? 0
+                            : Math.Round(
+                                (decimal)approved /
+                                total * 100,
+                                2)
+                };
+            })
+            .OrderByDescending(x =>
+                x.ApprovalRate)
+            .ToList();
+
+        return result;
+    }
+
+    public async Task<List<SlowPayerDto>>
+    GetSlowestPayersAsync(
+        int? facilityId)
+    {
+        var encounterIds =
+            await GetEncounterIdsAsync(
+                facilityId);
+
+        var requests =
+            await GetReviewedAuthorizationRequestsQuery(
+                encounterIds)
                 .ToListAsync();
 
         var result =
@@ -163,26 +200,16 @@ public async Task<List<PayerPerformanceDto>>
     }
 
     public async Task<RevenueAtRiskDto>
-    GetRevenueAtRiskAsync(int? facilityId)
+    GetRevenueAtRiskAsync(
+        int? facilityId)
     {
-        var encounterQuery =
-            _context.Encounters.AsQueryable();
-
-        if (facilityId.HasValue)
-        {
-            encounterQuery =
-                encounterQuery.Where(x =>
-                    x.FacilityId ==
-                    facilityId.Value);
-        }
-
         var encounterIds =
-            await encounterQuery
-                .Select(x => x.EncounterId)
-                .ToListAsync();
+            await GetEncounterIdsAsync(
+                facilityId);
 
         var deniedRequests =
             await _context.AuthorizationRequests
+                .AsNoTracking()
                 .Where(x =>
                     encounterIds.Contains(
                         x.EncounterId))
@@ -207,7 +234,13 @@ public async Task<List<PayerPerformanceDto>>
     {
         var facilities =
             await _context.Facilities
+                .AsNoTracking()
                 .Include(x => x.Encounters)
+                .ToListAsync();
+
+        var allRequests =
+            await _context.AuthorizationRequests
+                .AsNoTracking()
                 .ToListAsync();
 
         var result =
@@ -221,11 +254,11 @@ public async Task<List<PayerPerformanceDto>>
                     .ToList();
 
             var requests =
-                await _context.AuthorizationRequests
+                allRequests
                     .Where(x =>
                         encounterIds.Contains(
                             x.EncounterId))
-                    .ToListAsync();
+                    .ToList();
 
             var totalRequests =
                 requests.Count;
@@ -240,16 +273,13 @@ public async Task<List<PayerPerformanceDto>>
                     x.Status ==
                     (byte)RequestStatus.Denied);
 
-            decimal approvalRate = 0;
-
-            if (totalRequests > 0)
-            {
-                approvalRate =
-                    Math.Round(
+            var approvalRate =
+                totalRequests == 0
+                    ? 0
+                    : Math.Round(
                         (decimal)approvedRequests /
                         totalRequests * 100,
                         2);
-            }
 
             var approvedRevenue =
                 requests
@@ -266,19 +296,16 @@ public async Task<List<PayerPerformanceDto>>
                         x.ReviewedAt.HasValue)
                     .ToList();
 
-            decimal averageResponseDays = 0;
-
-            if (reviewedRequests.Any())
-            {
-                averageResponseDays =
-                    Math.Round(
+            var averageResponseDays =
+                reviewedRequests.Any()
+                    ? Math.Round(
                         (decimal)reviewedRequests
                             .Average(x =>
                                 (x.ReviewedAt!.Value -
                                  x.SubmittedAt!.Value)
                                 .TotalDays),
-                        2);
-            }
+                        2)
+                    : 0;
 
             result.Add(
                 new FacilityComparisonDto
@@ -308,11 +335,11 @@ public async Task<List<PayerPerformanceDto>>
 
         var ranked =
             result
-            .OrderByDescending(x =>
-                x.ApprovalRate)
-            .ThenByDescending(x =>
-                x.ApprovedRevenue)
-            .ToList();
+                .OrderByDescending(x =>
+                    x.ApprovalRate)
+                .ThenByDescending(x =>
+                    x.ApprovedRevenue)
+                .ToList();
 
         for (int i = 0; i < ranked.Count; i++)
         {
@@ -326,28 +353,13 @@ public async Task<List<PayerPerformanceDto>>
     GetTopPerformingPayersAsync(
         int? facilityId)
     {
-        var encounterQuery =
-            _context.Encounters.AsQueryable();
-
-        if (facilityId.HasValue)
-        {
-            encounterQuery =
-                encounterQuery.Where(x =>
-                    x.FacilityId ==
-                    facilityId.Value);
-        }
-
         var encounterIds =
-            await encounterQuery
-                .Select(x => x.EncounterId)
-                .ToListAsync();
+            await GetEncounterIdsAsync(
+                facilityId);
 
         var requests =
-            await _context.AuthorizationRequests
-                .Include(x => x.Payer)
-                .Where(x =>
-                    encounterIds.Contains(
-                        x.EncounterId))
+            await GetAuthorizationRequestsQuery(
+                encounterIds)
                 .ToListAsync();
 
         var result =
@@ -363,16 +375,13 @@ public async Task<List<PayerPerformanceDto>>
                         x.Status ==
                         (byte)RequestStatus.Approved);
 
-                decimal approvalRate = 0;
-
-                if (totalRequests > 0)
-                {
-                    approvalRate =
-                        Math.Round(
+                var approvalRate =
+                    totalRequests == 0
+                        ? 0
+                        : Math.Round(
                             (decimal)approvedRequests /
                             totalRequests * 100,
                             2);
-                }
 
                 return new TopPerformingPayerDto
                 {
@@ -394,40 +403,29 @@ public async Task<List<PayerPerformanceDto>>
                 x.ApprovedRequests)
             .ToList();
 
-        for (int i = 0; i < result.Count; i++)
+        var rankedResult =
+    result
+        .Select((item, index) =>
         {
-            result[i].Rank = i + 1;
-        }
+            item.Rank = index + 1;
+            return item;
+        })
+        .ToList();
 
-        return result;
+        return rankedResult;
     }
 
     public async Task<List<PoorPerformingPayerDto>>
     GetPoorPerformingPayersAsync(
         int? facilityId)
     {
-        var encounterQuery =
-            _context.Encounters.AsQueryable();
-
-        if (facilityId.HasValue)
-        {
-            encounterQuery =
-                encounterQuery.Where(x =>
-                    x.FacilityId ==
-                    facilityId.Value);
-        }
-
         var encounterIds =
-            await encounterQuery
-                .Select(x => x.EncounterId)
-                .ToListAsync();
+            await GetEncounterIdsAsync(
+                facilityId);
 
         var requests =
-            await _context.AuthorizationRequests
-                .Include(x => x.Payer)
-                .Where(x =>
-                    encounterIds.Contains(
-                        x.EncounterId))
+            await GetAuthorizationRequestsQuery(
+                encounterIds)
                 .ToListAsync();
 
         var result =
@@ -443,16 +441,13 @@ public async Task<List<PayerPerformanceDto>>
                         x.Status ==
                         (byte)RequestStatus.Denied);
 
-                decimal denialRate = 0;
-
-                if (totalRequests > 0)
-                {
-                    denialRate =
-                        Math.Round(
+                var denialRate =
+                    totalRequests == 0
+                        ? 0
+                        : Math.Round(
                             (decimal)deniedRequests /
                             totalRequests * 100,
                             2);
-                }
 
                 return new PoorPerformingPayerDto
                 {
@@ -486,31 +481,13 @@ public async Task<List<PayerPerformanceDto>>
     GetDelayTrendsAsync(
         int? facilityId)
     {
-        var encounterQuery =
-            _context.Encounters.AsQueryable();
-
-        if (facilityId.HasValue)
-        {
-            encounterQuery =
-                encounterQuery.Where(x =>
-                    x.FacilityId ==
-                    facilityId.Value);
-        }
-
         var encounterIds =
-            await encounterQuery
-                .Select(x => x.EncounterId)
-                .ToListAsync();
+            await GetEncounterIdsAsync(
+                facilityId);
 
         var requests =
-            await _context.AuthorizationRequests
-                .Include(x => x.Payer)
-                .Where(x =>
-                    encounterIds.Contains(
-                        x.EncounterId))
-                .Where(x =>
-                    x.SubmittedAt.HasValue &&
-                    x.ReviewedAt.HasValue)
+            await GetReviewedAuthorizationRequestsQuery(
+                encounterIds)
                 .ToListAsync();
 
         var result =
@@ -518,48 +495,38 @@ public async Task<List<PayerPerformanceDto>>
             .GroupBy(x => x.Payer.PayerName)
             .Select(g =>
             {
+                var delays =
+                    g.Select(x =>
+                        (x.ReviewedAt!.Value -
+                         x.SubmittedAt!.Value)
+                        .TotalDays)
+                    .ToList();
+
                 return new DelayTrendDto
                 {
                     PayerName = g.Key,
 
                     ZeroToTwoDays =
-                        g.Count(x =>
-                            (x.ReviewedAt!.Value -
-                             x.SubmittedAt!.Value)
-                            .TotalDays <= 2),
+                        delays.Count(x =>
+                            x <= 2),
 
                     ThreeToFiveDays =
-                        g.Count(x =>
-                        {
-                            var days =
-                                (x.ReviewedAt!.Value -
-                                 x.SubmittedAt!.Value)
-                                .TotalDays;
-
-                            return days > 2 &&
-                                   days <= 5;
-                        }),
+                        delays.Count(x =>
+                            x > 2 &&
+                            x <= 5),
 
                     SixToTenDays =
-                        g.Count(x =>
-                        {
-                            var days =
-                                (x.ReviewedAt!.Value -
-                                 x.SubmittedAt!.Value)
-                                .TotalDays;
-
-                            return days > 5 &&
-                                   days <= 10;
-                        }),
+                        delays.Count(x =>
+                            x > 5 &&
+                            x <= 10),
 
                     MoreThanTenDays =
-                        g.Count(x =>
-                            (x.ReviewedAt!.Value -
-                             x.SubmittedAt!.Value)
-                            .TotalDays > 10)
+                        delays.Count(x =>
+                            x > 10)
                 };
             })
-            .OrderBy(x => x.PayerName)
+            .OrderBy(x =>
+                x.PayerName)
             .ToList();
 
         return result;
