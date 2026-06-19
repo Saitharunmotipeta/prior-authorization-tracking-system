@@ -1,41 +1,52 @@
+﻿using Microsoft.EntityFrameworkCore;
+using PriorAuthorization.Payer.API.Services;
+using PriorAuthorization.Payer.API.Services.Interfaces;
+using PriorAuthorization.Shared.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// ✅ Add Controllers
+builder.Services.AddControllers();
 
+
+// ✅ Add DbContext (from Shared project)
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+
+// ✅ Register Services
+builder.Services.AddScoped<IPayerService, PayerService>();
+
+
+// ✅ Swagger Configuration
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+
+// ✅ Logging (already built-in, no extra config needed)
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+
+// ✅ Build app
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
+// ✅ Enable Swagger (ONLY in Development)
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
+
+// ✅ Middleware Pipeline
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseAuthorization();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapControllers();
 
+
+// ✅ Run application
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
