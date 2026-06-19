@@ -28,4 +28,20 @@ public class EncounterController : ControllerBase
             Message = "Encounter created successfully."
         });
     }
+
+    [HttpPatch("{encounterId}")]
+    public async Task<IActionResult> UpdateEncounter(
+        int encounterId,
+        UpdateEncounterDto dto)
+    {
+        await _encounterService
+            .UpdateEncounterAsync(
+                encounterId,
+                dto);
+
+        return Ok(new
+        {
+            Message = "Encounter updated successfully."
+        });
+    }
 }
