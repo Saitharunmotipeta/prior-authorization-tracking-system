@@ -5,22 +5,28 @@ using PriorAuthorization.Shared.Data;
 using PriorAuthorization.Shared.Entities;
 using PriorAuthorization.Shared.Enums;
 using PriorAuthorization.Shared.Exceptions;
+using PriorAuthorization.Shared.Utilities;
 
 namespace PriorAuthorization.Manager.API.Services.Implementations;
 
 public class AnalyticsService : IAnalyticsService
 {
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<AnalyticsService> _logger;
 
     public AnalyticsService(
-        ApplicationDbContext context)
+        ApplicationDbContext context, ILogger<AnalyticsService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     private async Task<List<int>> GetEncounterIdsAsync(
     int? facilityId)
     {
+        var stopwatch =
+            StopwatchUtility.Start();
+
         if (facilityId.HasValue)
         {
             if (facilityId.Value <= 0)
@@ -55,10 +61,21 @@ public class AnalyticsService : IAnalyticsService
                     facilityId.Value);
         }
 
-        return await query
-            .Select(x =>
-                x.EncounterId)
-            .ToListAsync();
+        var encounterIds =
+            await query
+                .Select(x =>
+                    x.EncounterId)
+                .ToListAsync();
+
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetEncounterIdsAsync completed in {ElapsedMs} ms",
+            elapsedMs);
+
+        return encounterIds;
     }
 
     private IQueryable<AuthorizationRequest>
@@ -88,6 +105,13 @@ public class AnalyticsService : IAnalyticsService
     GetPayerPerformanceAsync(
         int? facilityId)
     {
+        var stopwatch =
+            StopwatchUtility.Start();
+
+        _logger.LogInformation(
+            "GetPayerPerformanceAsync started. FacilityId: {FacilityId}",
+            facilityId);
+
         var encounterIds =
             await GetEncounterIdsAsync(
                 facilityId);
@@ -149,6 +173,15 @@ public class AnalyticsService : IAnalyticsService
                 x.ApprovalRate)
             .ToList();
 
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetPayerPerformanceAsync completed in {ElapsedMs} ms. Records Returned: {Count}",
+            elapsedMs,
+            result.Count);
+
         return result;
     }
 
@@ -156,6 +189,13 @@ public class AnalyticsService : IAnalyticsService
     GetSlowestPayersAsync(
         int? facilityId)
     {
+        var stopwatch =
+            StopwatchUtility.Start();
+
+        _logger.LogInformation(
+            "GetSlowestPayersAsync started. FacilityId: {FacilityId}",
+            facilityId);
+
         var encounterIds =
             await GetEncounterIdsAsync(
                 facilityId);
@@ -196,6 +236,15 @@ public class AnalyticsService : IAnalyticsService
                 x.AverageResponseDays)
             .ToList();
 
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetSlowestPayersAsync completed in {ElapsedMs} ms. Records Returned: {Count}",
+            elapsedMs,
+            result.Count);
+
         return result;
     }
 
@@ -203,6 +252,13 @@ public class AnalyticsService : IAnalyticsService
     GetRevenueAtRiskAsync(
         int? facilityId)
     {
+        var stopwatch =
+            StopwatchUtility.Start();
+
+        _logger.LogInformation(
+            "GetRevenueAtRiskAsync started. FacilityId: {FacilityId}",
+            facilityId);
+
         var encounterIds =
             await GetEncounterIdsAsync(
                 facilityId);
@@ -218,20 +274,39 @@ public class AnalyticsService : IAnalyticsService
                     (byte)RequestStatus.Denied)
                 .ToListAsync();
 
-        return new RevenueAtRiskDto
-        {
-            DeniedRequests =
-                deniedRequests.Count,
+        var result =
+            new RevenueAtRiskDto
+            {
+                DeniedRequests =
+                    deniedRequests.Count,
 
-            RevenueAtRisk =
-                deniedRequests.Sum(x =>
-                    x.EstimatedTotalAmount)
-        };
+                RevenueAtRisk =
+                    deniedRequests.Sum(x =>
+                        x.EstimatedTotalAmount)
+            };
+
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetRevenueAtRiskAsync completed in {ElapsedMs} ms. DeniedRequests: {DeniedRequests}, RevenueAtRisk: {RevenueAtRisk}",
+            elapsedMs,
+            result.DeniedRequests,
+            result.RevenueAtRisk);
+
+        return result;
     }
 
     public async Task<List<FacilityComparisonDto>>
     GetFacilityComparisonAsync()
     {
+        var stopwatch =
+            StopwatchUtility.Start();
+
+        _logger.LogInformation(
+            "GetFacilityComparisonAsync started.");
+
         var facilities =
             await _context.Facilities
                 .AsNoTracking()
@@ -346,6 +421,15 @@ public class AnalyticsService : IAnalyticsService
             ranked[i].Rank = i + 1;
         }
 
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetFacilityComparisonAsync completed in {ElapsedMs} ms. Facilities Ranked: {Count}",
+            elapsedMs,
+            ranked.Count);
+
         return ranked;
     }
 
@@ -353,6 +437,13 @@ public class AnalyticsService : IAnalyticsService
     GetTopPerformingPayersAsync(
         int? facilityId)
     {
+        var stopwatch =
+            StopwatchUtility.Start();
+
+        _logger.LogInformation(
+            "GetTopPerformingPayersAsync started. FacilityId: {FacilityId}",
+            facilityId);
+
         var encounterIds =
             await GetEncounterIdsAsync(
                 facilityId);
@@ -404,13 +495,22 @@ public class AnalyticsService : IAnalyticsService
             .ToList();
 
         var rankedResult =
-    result
-        .Select((item, index) =>
-        {
-            item.Rank = index + 1;
-            return item;
-        })
-        .ToList();
+            result
+                .Select((item, index) =>
+                {
+                    item.Rank = index + 1;
+                    return item;
+                })
+                .ToList();
+
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetTopPerformingPayersAsync completed in {ElapsedMs} ms. Payers Ranked: {Count}",
+            elapsedMs,
+            rankedResult.Count);
 
         return rankedResult;
     }
@@ -419,6 +519,13 @@ public class AnalyticsService : IAnalyticsService
     GetPoorPerformingPayersAsync(
         int? facilityId)
     {
+        var stopwatch =
+            StopwatchUtility.Start();
+
+        _logger.LogInformation(
+            "GetPoorPerformingPayersAsync started. FacilityId: {FacilityId}",
+            facilityId);
+
         var encounterIds =
             await GetEncounterIdsAsync(
                 facilityId);
@@ -474,6 +581,15 @@ public class AnalyticsService : IAnalyticsService
             result[i].Rank = i + 1;
         }
 
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetPoorPerformingPayersAsync completed in {ElapsedMs} ms. Payers Ranked: {Count}",
+            elapsedMs,
+            result.Count);
+
         return result;
     }
 
@@ -481,6 +597,13 @@ public class AnalyticsService : IAnalyticsService
     GetDelayTrendsAsync(
         int? facilityId)
     {
+        var stopwatch =
+            StopwatchUtility.Start();
+
+        _logger.LogInformation(
+            "GetDelayTrendsAsync started. FacilityId: {FacilityId}",
+            facilityId);
+
         var encounterIds =
             await GetEncounterIdsAsync(
                 facilityId);
@@ -528,6 +651,15 @@ public class AnalyticsService : IAnalyticsService
             .OrderBy(x =>
                 x.PayerName)
             .ToList();
+
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetDelayTrendsAsync completed in {ElapsedMs} ms. Payers Analyzed: {Count}",
+            elapsedMs,
+            result.Count);
 
         return result;
     }

@@ -1,25 +1,36 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PriorAuthorization.Manager.API.DTOs.Dashboard;
 using PriorAuthorization.Manager.API.Services.Interfaces;
-using PriorAuthorization.Shared.Exceptions;
 using PriorAuthorization.Shared.Data;
 using PriorAuthorization.Shared.Enums;
+using PriorAuthorization.Shared.Exceptions;
+using PriorAuthorization.Shared.Utilities;
 
 namespace PriorAuthorization.Manager.API.Services.Implementations;
 
 public class DashboardService : IDashboardService
 {
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<DashboardService> _logger;
 
     public DashboardService(
-        ApplicationDbContext context)
+        ApplicationDbContext context, ILogger<DashboardService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<DashboardResponseDto> GetDashboardAsync(
-        DashboardFilterDto filter)
+    DashboardFilterDto filter)
     {
+        var stopwatch =
+            StopwatchUtility.Start();
+
+        _logger.LogInformation(
+            "Dashboard request started. FacilityId: {FacilityId}",
+            filter.FacilityId);
+
         var encounterQuery =
             _context.Encounters
                 .AsNoTracking()
@@ -29,6 +40,10 @@ public class DashboardService : IDashboardService
         {
             if (filter.FacilityId.Value <= 0)
             {
+                _logger.LogWarning(
+                    "Invalid FacilityId received: {FacilityId}",
+                    filter.FacilityId);
+
                 throw new ValidationException(
                     "FacilityId must be greater than zero.");
             }
@@ -42,6 +57,10 @@ public class DashboardService : IDashboardService
 
             if (!facilityExists)
             {
+                _logger.LogWarning(
+                    "Facility not found. FacilityId: {FacilityId}",
+                    filter.FacilityId);
+
                 throw new NotFoundException(
                     $"Facility {filter.FacilityId} not found.");
             }
@@ -145,6 +164,15 @@ public class DashboardService : IDashboardService
                     (decimal)successfulReminders /
                     totalReminders * 100,
                     2);
+
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "Dashboard generated successfully in {ElapsedMs} ms. FacilityId: {FacilityId}",
+            elapsedMs,
+            filter.FacilityId);
 
         return new DashboardResponseDto
         {
