@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,22 +19,56 @@ builder.Host.UseSerilog();
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+=======
+﻿using Microsoft.EntityFrameworkCore;
+using PriorAuthorization.Payer.API.Services;
+using PriorAuthorization.Payer.API.Services.Interfaces;
+using PriorAuthorization.Shared.Data;
 
+var builder = WebApplication.CreateBuilder(args);
+
+// ✅ Add Controllers
+builder.Services.AddControllers();
+>>>>>>> 92c03a0398f22830403aa2db600852c1864b35eb
+
+
+// ✅ Add DbContext (from Shared project)
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+
+// ✅ Register Services
+builder.Services.AddScoped<IPayerService, PayerService>();
+
+
+// ✅ Swagger Configuration
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+
+// ✅ Logging (already built-in, no extra config needed)
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+
+// ✅ Build app
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
+// ✅ Enable Swagger (ONLY in Development)
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
+
+// ✅ Middleware Pipeline
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseAuthorization();
 
+<<<<<<< HEAD
 app.MapGet("/weatherforecast", () =>
 {
     var forecast =  Enumerable.Range(1, 5).Select(index =>
@@ -48,8 +83,10 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
     app.Run();
+=======
+app.MapControllers();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+>>>>>>> 92c03a0398f22830403aa2db600852c1864b35eb
+
+// ✅ Run application
+app.Run();
