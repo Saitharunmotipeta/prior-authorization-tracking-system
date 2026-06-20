@@ -1,0 +1,32 @@
+CREATE NONCLUSTERED INDEX IX_Encounter_FacilityId
+ON Encounter(facility_id);
+GO
+
+CREATE NONCLUSTERED INDEX IX_AuthorizationRequest_PayerId
+ON AuthorizationRequest(payer_id);
+GO
+
+CREATE NONCLUSTERED INDEX IX_AuthorizationRequest_Status
+ON AuthorizationRequest(Status);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Reminder_AuthId
+ON Reminder(auth_id);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Reminder_PayerId
+ON Reminder(payer_id);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Encounter_DepartmentId
+ON Encounter(DepartmentId);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Encounter_PatientId
+ON Encounter(PatientId);
+GO
+
+CREATE NONCLUSTERED INDEX IX_AuthorizationRequest_Status_PayerId
+ON AuthorizationRequest(Status, payer_id);
+GO
+

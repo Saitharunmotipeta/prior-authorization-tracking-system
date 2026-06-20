@@ -1,4 +1,19 @@
+using Serilog;
+
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger =
+    new LoggerConfiguration()
+        .MinimumLevel.Information()
+        .WriteTo.File(
+            path: "Logs/application-.txt",
+            rollingInterval:
+                RollingInterval.Day,
+            retainedFileCountLimit: 30,
+            shared: true)
+        .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -32,8 +47,7 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 })
 .WithName("GetWeatherForecast");
-
-app.Run();
+    app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
