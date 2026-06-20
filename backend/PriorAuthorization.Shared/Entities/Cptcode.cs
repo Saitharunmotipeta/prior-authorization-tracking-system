@@ -20,6 +20,9 @@ public partial class Cptcode
     [Unicode(false)]
     public string CptDescription { get; set; } = null!;
 
+    [Column("estimated_cost", TypeName = "decimal(18,2)")]
+    public decimal EstimatedCost { get; set; }
+
     [InverseProperty("CptCodeNavigation")]
     public virtual ICollection<AuthorizationService> AuthorizationServices { get; set; } = new List<AuthorizationService>();
 }
