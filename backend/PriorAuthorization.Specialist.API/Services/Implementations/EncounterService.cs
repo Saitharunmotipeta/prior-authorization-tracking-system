@@ -2,6 +2,7 @@
 using PriorAuthorization.Shared.Data;
 using PriorAuthorization.Shared.Entities;
 using PriorAuthorization.Shared.Enums;
+using PriorAuthorization.Shared.Exceptions;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 using System.Text.Json;
@@ -214,5 +215,114 @@ public class EncounterService : IEncounterService
 
         await _context.SaveChangesAsync();
     }
+    
+
+public async Task VerifyEncounterAsync(
+    int encounterId)
+{
+    var encounter =
+        await _context.Encounters
+            .FirstOrDefaultAsync(e =>
+                e.EncounterId == encounterId);
+
+    if (encounter == null)
+    {
+        throw new NotFoundException(
+            $"Encounter {encounterId} not found.");
+    }
+
+    if (!encounter.IdentificationVerified)
+    {
+        throw new ConflictException(
+            "Identification document is not verified.");
+    }
+
+    if (!encounter.PrescriptionVerified)
+    {
+        throw new ConflictException(
+            "Prescription document is not verified.");
+    }
+
+    if (!encounter.ScanVerified)
+    {
+        throw new ConflictException(
+            "Scan document is not verified.");
+    }
+
+    if (!encounter.DoctorNotesVerified)
+    {
+        throw new ConflictException(
+            "Doctor notes are not verified.");
+    }
+
+    if (!encounter.InsuranceCardVerified)
+    {
+        throw new ConflictException(
+            "Insurance card is not verified.");
+    }
+
+    if (encounter.VerificationStatus ==
+        (byte)VerificationStatus.Verified)
+    {
+        throw new ConflictException(
+            "Encounter is already verified.");
+    }
+
+    var oldValues =
+        new Dictionary<string, object?>
+        {
+            ["verificationStatus"] =
+                Enum.GetName(
+                    typeof(VerificationStatus),
+                    encounter.VerificationStatus)
+        };
+
+    encounter.VerificationStatus =
+        (byte)VerificationStatus.Verified;
+
+    encounter.UpdatedAt =
+        DateTime.UtcNow;
+
+    var newValues =
+        new Dictionary<string, object?>
+        {
+            ["verificationStatus"] =
+                Enum.GetName(
+                    typeof(VerificationStatus),
+                    encounter.VerificationStatus)
+        };
+
+    var audit =
+        new AuditHistory
+        {
+            EncounterId =
+                encounter.EncounterId,
+
+            EntityId =
+                $"Encounter-{encounter.EncounterId}",
+
+            ActionType =
+                (byte)AuditActionType.Updated,
+
+            OldValue =
+                JsonSerializer.Serialize(oldValues),
+
+            NewValue =
+                JsonSerializer.Serialize(newValues),
+
+            PerformedByRole =
+                (byte)UserRole.Specialist,
+
+            Remarks =
+                "Encounter verified",
+
+            CreatedAt =
+                DateTime.UtcNow
+        };
+
+    _context.AuditHistories.Add(audit);
+
+    await _context.SaveChangesAsync();
+}
 
 }

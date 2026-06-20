@@ -44,6 +44,7 @@ builder.Services.AddScoped<IFacilityService, FacilityService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IPatientLookupService, PatientLookupService>();
 builder.Services.AddScoped<IEncounterService, EncounterService>();
+builder.Services.AddScoped<IAuthorizationService,AuthorizationRequestService>();
 
 builder.Services.AddModelValidationConfiguration();
 
