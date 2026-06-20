@@ -8,4 +8,5 @@ public interface IEncounterService
     Task UpdateEncounterAsync(
         int encounterId,
         UpdateEncounterDto dto);
+    Task VerifyEncounterAsync(int encounterId);
 }

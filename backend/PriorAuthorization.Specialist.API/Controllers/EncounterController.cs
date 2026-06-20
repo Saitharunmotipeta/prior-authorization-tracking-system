@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PriorAuthorization.Shared.Common;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 
@@ -43,5 +44,17 @@ public class EncounterController : ControllerBase
         {
             Message = "Encounter updated successfully."
         });
+    }
+    [HttpPatch("{encounterId}/verify")]
+    public async Task<IActionResult> VerifyEncounter(
+    int encounterId)
+    {
+        await _encounterService
+            .VerifyEncounterAsync(encounterId);
+
+        return Ok(
+            ApiResponse<string>.SuccessResponse(
+                null,
+                "Encounter verified successfully."));
     }
 }
