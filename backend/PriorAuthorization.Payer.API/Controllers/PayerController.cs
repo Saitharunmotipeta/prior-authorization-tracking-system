@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PriorAuthorization.Payer.API.Services.Interfaces;
 using PriorAuthorization.Payer.API.DTOs;
+using PriorAuthorization.Payer.API.Services.Interfaces;
+using PriorAuthorization.Shared.Common;
+using PriorAuthorization.Shared.Exceptions;
 using PriorAuthorization.Shared.Enums;
 
 namespace PriorAuthorization.Payer.API.Controllers
@@ -24,69 +26,78 @@ namespace PriorAuthorization.Payer.API.Controllers
         [HttpGet("facilities")]
         public async Task<IActionResult> GetFacilities()
         {
-            var facilities = await _payerService.GetFacilities();
-            return Ok(facilities);
+            var result = await _payerService.GetFacilities();
+            return Ok(
+                ApiResponse<List<FacilityDto>>
+                    .SuccessResponse(
+                        result,
+                        "Facilities fetched successfully."));
         }
 
         [HttpGet("facilities/{facilityId}/authorization-requests")]
-        public async Task<IActionResult> GetRequestsByFacility(int facilityId)
-        {
-            var result = await _payerService.GetRequestsByFacility(facilityId);
+        public async Task<IActionResult> GetRequestsByFacility(
+            int facilityId)
+                {
+                    var result =
+                        await _payerService
+                            .GetRequestsByFacility(
+                                facilityId);
 
-            if (result == null || !result.Any())
-                return NoContent();
-
-            return Ok(result);
-        }
+                    return Ok(
+                        ApiResponse<List<RequestLists>>
+                            .SuccessResponse(
+                                result,
+                                "Authorization requests fetched successfully."));
+                }
 
 
         [HttpGet("{authId}")]
-        public async Task<IActionResult> GetAuthorizationDetails(int authId)
+        public async Task<IActionResult> GetAuthorizationDetails(
+    int authId)
         {
-            _logger.LogInformation(
-                "Fetching authorization details for AuthId: {AuthId}",
-                authId);
+            var result =
+                await _payerService
+                    .GetAuthorizationDetails(
+                        authId);
 
-            var result = await _payerService.GetAuthorizationDetails(authId);
-
-            if (result == null)
-            {
-                return NotFound($"Authorization request with id {authId} not found");
-            }
-
-            return Ok(result);
+            return Ok(
+                ApiResponse<RequestsDetails>
+                    .SuccessResponse(
+                        result,
+                        "Authorization details fetched successfully."));
         }
 
 
         [HttpPatch("{authId}/review")]
         public async Task<IActionResult> ReviewAuthorization(
-    int authId,
-    [FromBody] ReviewRequest dto)
+            int authId,
+            [FromBody] ReviewRequest dto)
         {
-            _logger.LogInformation(
-                "Review action {Action} started for AuthId: {AuthId}",
-                dto.Action, authId);
+            await _payerService
+                .ReviewAuthorization(
+                    authId,
+                    dto);
 
-            var result = await _payerService.ReviewAuthorization(authId, dto);
-
-            if (!result)
-            {
-                return NotFound($"Authorization request with id {authId} not found");
-            }
-
-            return Ok("Review completed successfully");
+            return Ok(
+                ApiResponse<string>
+                    .SuccessResponse(
+                        "Review completed successfully.",
+                        "Authorization request reviewed successfully."));
         }
 
 
         [HttpGet("emergency")]
         public async Task<IActionResult> GetEmergencyRequests()
         {
-            var result = await _payerService.GetEmergencyRequests();
+            var result =
+                await _payerService
+                    .GetEmergencyRequests();
 
-            if (result == null || !result.Any())
-                return NoContent();
-
-            return Ok(result);
+            return Ok(
+                ApiResponse<List<RequestLists>>
+                    .SuccessResponse(
+                        result,
+                        "Emergency authorization requests fetched successfully."));
         }
 
 
@@ -94,14 +105,15 @@ namespace PriorAuthorization.Payer.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetReminders()
         {
-            _logger.LogInformation("Fetching all reminders");
+            var result =
+                await _payerService
+                    .GetReminders();
 
-            var result = await _payerService.GetReminders();
-
-            if (result == null || !result.Data.Any())
-                return NoContent();
-
-            return Ok(result);
+            return Ok(
+                ApiResponse<ReminderListResponseDto>
+                    .SuccessResponse(
+                        result,
+                        "Reminders fetched successfully."));
         }
 
 
