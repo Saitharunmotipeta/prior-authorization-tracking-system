@@ -12,10 +12,13 @@ namespace PriorAuthorization.Specialist.API.Services.Implementations;
 public class EncounterService : IEncounterService
 {
     private readonly ApplicationDbContext _context;
-
-    public EncounterService(ApplicationDbContext context)
+    private readonly IEligibilityService _eligibilityService;
+    public EncounterService(
+        ApplicationDbContext context,
+        IEligibilityService eligibilityService)
     {
         _context = context;
+        _eligibilityService = eligibilityService;
     }
 
     public async Task<int> CreateEncounterAsync(CreateEncounterDto dto)
@@ -39,6 +42,16 @@ public class EncounterService : IEncounterService
 
         if (!departmentExists)
             throw new Exception("Department does not belong to selected facility.");
+
+        var eligibility =
+            await _eligibilityService
+                .VerifyEligibilityAsync(dto.PatientId);
+
+        if (!eligibility.IsEligible)
+        {
+            throw new ConflictException(
+                "Patient insurance policy has expired.");
+        }
 
         var encounter = new Encounter
         {
@@ -72,7 +85,7 @@ public class EncounterService : IEncounterService
         {
             EncounterId = encounter.EncounterId,
 
-            EntityId = encounter.EncounterId.ToString(),
+            EntityId = $"Encounter-{encounter.EncounterId}",
 
             ActionType = (byte)AuditActionType.Created,
 
