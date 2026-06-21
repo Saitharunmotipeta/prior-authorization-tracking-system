@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using PriorAuthorization.Payer.API.DTOs;
 using PriorAuthorization.Payer.API.Services.Interfaces;
 using PriorAuthorization.Shared.Data;
@@ -6,6 +7,8 @@ using PriorAuthorization.Shared.Entities;
 using PriorAuthorization.Shared.Enums;
 using PriorAuthorization.Shared.Exceptions;
 using PriorAuthorization.Shared.Utilities;
+using PriorAuthorization.Shared.Middleware;
+using PriorAuthorization.Shared.Validations;
 using System;
 
 public class PayerService : IPayerService
@@ -75,9 +78,10 @@ public class PayerService : IPayerService
             elapsedMs,
             result.Count);
 
-        return result;
-    }
+            throw new InternalServerException("Failed to fetch facilities");
 
+        }
+    }
 
 
     public async Task<List<RequestLists>> GetRequestsByFacility(
@@ -181,9 +185,21 @@ public class PayerService : IPayerService
             elapsedMs,
             result.Count);
 
-        return result;
-    }
+            return result;
+        }
+        catch (AppException)
+        {
+            throw; // ✅ Already handled properly
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Error occurred while fetching requests for FacilityId: {FacilityId}",
+                facilityId);
 
+            throw new InternalServerException("Failed to fetch authorization requests");
+        }
+    }
 
     public async Task<RequestsDetails> GetAuthorizationDetails(
         int authId)
@@ -321,7 +337,8 @@ public class PayerService : IPayerService
             elapsedMs,
             authId);
 
-        return result;
+            throw new InternalServerException("Failed to fetch authorization details");
+        }
     }
 
     public async Task<bool> ReviewAuthorization(
@@ -361,7 +378,7 @@ public class PayerService : IPayerService
                 .FirstOrDefaultAsync(x =>
                     x.AuthId == authId);
 
-        if (auth == null)
+        try
         {
             _logger.LogWarning(
                 "Authorization not found. AuthId: {AuthId}",
@@ -484,7 +501,7 @@ public class PayerService : IPayerService
         _context.AuditHistories.Add(
             audit);
 
-        await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
         var elapsedMs =
             StopwatchUtility.Stop(
@@ -496,7 +513,20 @@ public class PayerService : IPayerService
             authId,
             dto.Action);
 
-        return true;
+            return true;
+        }
+        catch (AppException)
+        {
+            throw; // ✅ handled by middleware
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Error occurred while reviewing authorization for AuthId: {AuthId}",
+                authId);
+
+            throw new InternalServerException("Failed to process authorization review");
+        }
     }
 
     public async Task<List<RequestLists>> GetEmergencyRequests()
@@ -577,10 +607,21 @@ public class PayerService : IPayerService
             elapsedMs,
             result.Count);
 
-        return result;
+            _logger.LogInformation("Fetched {Count} emergency requests", result.Count);
+
+            return result;
+        }
+        catch (AppException)
+        {
+            throw; // ✅ already handled
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching emergency requests");
+
+            throw new InternalServerException("Failed to fetch emergency requests");
+        }
     }
-
-
 
     public async Task<ReminderListResponseDto> GetReminders()
     {
