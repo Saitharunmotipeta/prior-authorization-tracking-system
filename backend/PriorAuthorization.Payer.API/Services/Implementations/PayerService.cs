@@ -21,6 +21,13 @@ public class PayerService : IPayerService
         _logger = logger;
     }
 
+    private static readonly byte[] PendingStatuses =
+{
+    (byte)RequestStatus.Submitted,
+    (byte)RequestStatus.UnderReview,
+    (byte)RequestStatus.AdditionalInfoRequired
+};
+
 
     public async Task<List<FacilityDto>> GetFacilities()
     {
@@ -28,35 +35,23 @@ public class PayerService : IPayerService
 
         try
         {
-            // ✅ Step 1: Get all facilities
-            var facilities = await _context.Facilities
-                .AsNoTracking()
-                .ToListAsync();
-
-            // ✅ Step 2: Get pending counts grouped by facility
-            var pendingCounts = await _context.AuthorizationRequests
-                .Where(a =>
-                    a.Status == (byte)RequestStatus.Submitted ||
-                    a.Status == (byte)RequestStatus.UnderReview ||
-                    a.Status == (byte)RequestStatus.AdditionalInfoRequired
-                )
-                .GroupBy(a => a.Encounter.FacilityId)
-                .Select(g => new
-                {
-                    FacilityId = g.Key,
-                    Count = g.Count()
-                })
-                .ToListAsync();
-
+            
            
-            var result = facilities.Select(f => new FacilityDto
-            {
-                FacilityId = f.FacilityId,
-                FacilityName = f.FacilityName,
 
-                PendingCount = pendingCounts
-                    .FirstOrDefault(x => x.FacilityId == f.FacilityId)?.Count ?? 0
-            }).ToList();
+
+            var result = await _context.Facilities
+     .AsNoTracking()
+     .Select(f => new FacilityDto
+     {
+         FacilityId = f.FacilityId,
+         FacilityName = f.FacilityName,
+         PendingCount = _context.AuthorizationRequests
+             .Where(a =>
+                 a.Encounter.FacilityId == f.FacilityId &&
+                 PendingStatuses.Contains(a.Status))
+             .Count()
+     })
+     .ToListAsync();
 
             _logger.LogInformation("Fetched {Count} facilities", result.Count);
 
@@ -96,9 +91,7 @@ public class PayerService : IPayerService
                 .Where(a =>
                     a.Encounter.FacilityId == facilityId &&
                     (
-                        a.Status == (byte)RequestStatus.Submitted ||
-                        a.Status == (byte)RequestStatus.UnderReview ||
-                        a.Status == (byte)RequestStatus.AdditionalInfoRequired
+                       PendingStatuses.Contains(a.Status)
                     )
                 )
 
@@ -376,9 +369,7 @@ public class PayerService : IPayerService
                 .Where(a =>
                     a.Encounter.ConditionType == (byte)ConditionType.Emergency &&
                     (
-                        a.Status == (byte)RequestStatus.Submitted ||
-                        a.Status == (byte)RequestStatus.UnderReview ||
-                        a.Status == (byte)RequestStatus.AdditionalInfoRequired
+                        PendingStatuses.Contains(a.Status)
                     )
                 )
 
@@ -478,3 +469,5 @@ public class PayerService : IPayerService
     }
 
 }
+
+
