@@ -54,3 +54,13 @@ public sealed class BadRequestException : AppException
     {
     }
 }
+
+
+
+public sealed class InternalServerException : AppException
+{
+    public InternalServerException(string message)
+        : base(StatusCodes.Status500InternalServerError, message)
+    {
+    }
+}

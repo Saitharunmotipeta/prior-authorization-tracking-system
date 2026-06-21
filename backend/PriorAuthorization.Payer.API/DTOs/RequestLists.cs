@@ -1,25 +1,33 @@
-﻿namespace PriorAuthorization.Payer.API.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace PriorAuthorization.Payer.API.DTOs
 {
+   
+
     public class RequestLists
     {
-       
-            public int AuthId { get; set; }
+        public int AuthId { get; set; }
 
-            public int EncounterId { get; set; }
+        public int EncounterId { get; set; }
 
-            public string PatientName { get; set; }
+        [Required]
+        public string PatientName { get; set; }
 
-            public string FacilityName { get; set; }
+        [Required]
+        public string FacilityName { get; set; }
 
-            public string ConditionType { get; set; }
+        [Required]
+        public string ConditionType { get; set; }
 
-            public string Priority { get; set; }
+        [Required]
+        public string Priority { get; set; }
 
-            public string Status { get; set; }
+        [Required]
+        public string Status { get; set; }
 
-            public decimal EstimatedAmount { get; set; }
+        [Range(0, double.MaxValue)]
+        public decimal EstimatedAmount { get; set; }
 
-            public DateTime? SubmittedAt { get; set; }
-        
+        public DateTime? SubmittedAt { get; set; }
     }
 }
