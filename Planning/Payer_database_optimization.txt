@@ -1,0 +1,22 @@
+CREATE NONCLUSTERED INDEX IX_Auth_Status
+ON AuthorizationRequest(Status);
+
+CREATE NONCLUSTERED INDEX IX_Auth_Facility
+ON AuthorizationRequest(EncounterId);
+
+-- Optional (best)
+CREATE NONCLUSTERED INDEX IX_Auth_Composite
+ON AuthorizationRequest(Status, EncounterId);
+
+CREATE NONCLUSTERED INDEX IX_Encounter_Facility
+ON Encounter(FacilityId);
+
+CREATE NONCLUSTERED INDEX IX_Encounter_Condition
+ON Encounter(ConditionType);
+
+
+CREATE NONCLUSTERED INDEX IX_Reminder_Status
+ON Reminder(Status);
+
+CREATE NONCLUSTERED INDEX IX_Reminder_Auth
+ON Reminder(AuthId);
