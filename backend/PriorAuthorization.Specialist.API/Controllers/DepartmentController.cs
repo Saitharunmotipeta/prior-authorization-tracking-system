@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PriorAuthorization.Shared.Common;
+using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 
-namespace Specialist.API.Controllers;
+namespace PriorAuthorization.Specialist.API.Controllers;
 
 [ApiController]
 [Route("api/departments")]
@@ -23,6 +25,10 @@ public class DepartmentController : ControllerBase
             await _departmentService
                 .GetDepartmentsByFacilityAsync(facilityId);
 
-        return Ok(departments);
+        return Ok(
+            ApiResponse<IEnumerable<DepartmentDto>>
+                .SuccessResponse(
+                    departments,
+                    "Departments retrieved successfully."));
     }
 }

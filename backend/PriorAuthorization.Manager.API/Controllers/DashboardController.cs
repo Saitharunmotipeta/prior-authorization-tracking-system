@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PriorAuthorization.Manager.API.DTOs.Dashboard;
 using PriorAuthorization.Manager.API.Services.Interfaces;
+using PriorAuthorization.Shared.Common;
 
 namespace PriorAuthorization.Manager.API.Controllers;
 
@@ -18,7 +19,7 @@ public class DashboardController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetDashboard(
-        [FromQuery] int? facilityId)
+    [FromQuery] int? facilityId)
     {
         var filter = new DashboardFilterDto
         {
@@ -29,6 +30,10 @@ public class DashboardController : ControllerBase
             await _dashboardService.GetDashboardAsync(
                 filter);
 
-        return Ok(result);
+        return Ok(
+            ApiResponse<DashboardResponseDto>
+                .SuccessResponse(
+                    result,
+                    "Dashboard retrieved successfully"));
     }
 }

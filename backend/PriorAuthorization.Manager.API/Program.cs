@@ -3,8 +3,22 @@ using PriorAuthorization.Manager.API.Services.Implementations;
 using PriorAuthorization.Manager.API.Services.Interfaces;
 using PriorAuthorization.Shared.Data;
 using PriorAuthorization.Shared.Middleware;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger =
+    new LoggerConfiguration()
+        .MinimumLevel.Information()
+        .WriteTo.File(
+            path: "Logs/application-.txt",
+            rollingInterval:
+                RollingInterval.Day,
+            retainedFileCountLimit: 30,
+            shared: true)
+        .CreateLogger();
+
+//builder.Host.UseSerilog();
 
 // Controllers
 
@@ -51,4 +65,20 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+    Log.Information(
+        "Application Started");
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(
+        ex,
+        "Application Failed To Start");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

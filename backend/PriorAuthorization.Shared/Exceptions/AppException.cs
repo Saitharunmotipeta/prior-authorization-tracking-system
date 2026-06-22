@@ -46,3 +46,21 @@ public sealed class UnauthorizedAppException : AppException
     {
     }
 }
+
+public sealed class BadRequestException : AppException
+{
+    public BadRequestException(string message)
+        : base(StatusCodes.Status400BadRequest, message)
+    {
+    }
+}
+
+
+
+public sealed class InternalServerException : AppException
+{
+    public InternalServerException(string message)
+        : base(StatusCodes.Status500InternalServerError, message)
+    {
+    }
+}
