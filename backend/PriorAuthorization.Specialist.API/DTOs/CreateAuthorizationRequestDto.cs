@@ -8,6 +8,6 @@ public class CreateAuthorizationRequestDto
 
     public byte Priority { get; set; }
 
-    public List<CreateAuthorizationServiceDto> Services { get; set; }
+    public List<AddAuthorizationServiceDto> Services { get; set; }
         = new();
 }
