@@ -78,14 +78,12 @@ public class PayerService : IPayerService
             elapsedMs,
             result.Count);
 
-            throw new InternalServerException("Failed to fetch facilities");
-
-        }
+        return result;
     }
 
 
     public async Task<List<RequestLists>> GetRequestsByFacility(
-        int facilityId)
+       int facilityId)
     {
         var stopwatch =
             StopwatchUtility.Start();
@@ -185,20 +183,7 @@ public class PayerService : IPayerService
             elapsedMs,
             result.Count);
 
-            return result;
-        }
-        catch (AppException)
-        {
-            throw; // ✅ Already handled properly
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Error occurred while fetching requests for FacilityId: {FacilityId}",
-                facilityId);
-
-            throw new InternalServerException("Failed to fetch authorization requests");
-        }
+        return result;
     }
 
     public async Task<RequestsDetails> GetAuthorizationDetails(
@@ -336,14 +321,13 @@ public class PayerService : IPayerService
             "GetAuthorizationDetails completed in {ElapsedMs} ms. AuthId: {AuthId}",
             elapsedMs,
             authId);
+        return result;
 
-            throw new InternalServerException("Failed to fetch authorization details");
         }
-    }
 
     public async Task<bool> ReviewAuthorization(
-    int authId,
-    ReviewRequest dto)
+        int authId,
+        ReviewRequest dto)
     {
         var stopwatch =
             StopwatchUtility.Start();
@@ -378,7 +362,7 @@ public class PayerService : IPayerService
                 .FirstOrDefaultAsync(x =>
                     x.AuthId == authId);
 
-        try
+        if (auth == null)
         {
             _logger.LogWarning(
                 "Authorization not found. AuthId: {AuthId}",
@@ -501,7 +485,7 @@ public class PayerService : IPayerService
         _context.AuditHistories.Add(
             audit);
 
-            await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
         var elapsedMs =
             StopwatchUtility.Stop(
@@ -512,21 +496,7 @@ public class PayerService : IPayerService
             elapsedMs,
             authId,
             dto.Action);
-
-            return true;
-        }
-        catch (AppException)
-        {
-            throw; // ✅ handled by middleware
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Error occurred while reviewing authorization for AuthId: {AuthId}",
-                authId);
-
-            throw new InternalServerException("Failed to process authorization review");
-        }
+        return true;
     }
 
     public async Task<List<RequestLists>> GetEmergencyRequests()
@@ -607,20 +577,7 @@ public class PayerService : IPayerService
             elapsedMs,
             result.Count);
 
-            _logger.LogInformation("Fetched {Count} emergency requests", result.Count);
-
-            return result;
-        }
-        catch (AppException)
-        {
-            throw; // ✅ already handled
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while fetching emergency requests");
-
-            throw new InternalServerException("Failed to fetch emergency requests");
-        }
+        return result;
     }
 
     public async Task<ReminderListResponseDto> GetReminders()
@@ -713,4 +670,4 @@ public class PayerService : IPayerService
         return result;
     }
 
-}}
+}
