@@ -17,9 +17,8 @@ public class AuthorizationRequestService : IAuthorizationService
     {
         _context = context;
     }
-
     public async Task<int> CreateAuthorizationRequestAsync(
-        CreateAuthorizationRequestDto dto)
+    CreateAuthorizationRequestDto dto)
     {
         var encounter =
             await _context.Encounters
@@ -62,58 +61,24 @@ public class AuthorizationRequestService : IAuthorizationService
                 $"Payer {dto.PayerId} not found.");
         }
 
-        if (dto.Services == null ||
-            !dto.Services.Any())
-        {
-            throw new BadRequestException(
-                "At least one authorization service is required.");
-        }
-
-        decimal totalAmount = 0;
-
-        var servicesToCreate =
-            new List<AuthorizationService>();
-
-        foreach (var service in dto.Services)
-        {
-            var cpt =
-                await _context.Cptcodes
-                    .FirstOrDefaultAsync(c =>
-                        c.CptCode1 == service.CptCode);
-
-            if (cpt == null)
+        var expirationDate =
+            encounter.ConditionType switch
             {
-                throw new NotFoundException(
-                    $"CPT Code '{service.CptCode}' not found.");
-            }
+                (byte)ConditionType.Emergency =>
+                    DateOnly.FromDateTime(
+                        DateTime.UtcNow.AddDays(1)),
 
-            var icdExists =
-                await _context.Icdcodes
-                    .AnyAsync(i =>
-                        i.IcdCode1 == service.IcdCode);
+                (byte)ConditionType.Urgent =>
+                    DateOnly.FromDateTime(
+                        DateTime.UtcNow.AddDays(7)),
 
-            if (!icdExists)
-            {
-                throw new NotFoundException(
-                    $"ICD Code '{service.IcdCode}' not found.");
-            }
-
-            totalAmount += cpt.EstimatedCost;
-
-            servicesToCreate.Add(
-                new AuthorizationService
-                {
-                    CptCode = service.CptCode,
-                    IcdCode = service.IcdCode,
-                    EstimatedCost = cpt.EstimatedCost,
-                    Notes = service.Notes,
-                    CreatedAt = DateTime.UtcNow
-                });
-        }
+                _ =>
+                    DateOnly.FromDateTime(
+                        DateTime.UtcNow.AddDays(15))
+            };
 
         using var transaction =
-            await _context.Database
-                .BeginTransactionAsync();
+            await _context.Database.BeginTransactionAsync();
 
         try
         {
@@ -121,16 +86,12 @@ public class AuthorizationRequestService : IAuthorizationService
                 new AuthorizationRequest
                 {
                     EncounterId = dto.EncounterId,
-
                     PayerId = dto.PayerId,
-
                     Priority = dto.Priority,
 
-                    Status =
-                        (byte)RequestStatus.Draft,
+                    Status = (byte)RequestStatus.Draft,
 
-                    EstimatedTotalAmount =
-                        totalAmount,
+                    EstimatedTotalAmount = 0,
 
                     ApprovedAmount = null,
 
@@ -138,7 +99,7 @@ public class AuthorizationRequestService : IAuthorizationService
 
                     ReviewedAt = null,
 
-                    ExpirationDate = null,
+                    ExpirationDate = expirationDate,
 
                     CreatedAt = DateTime.UtcNow,
 
@@ -150,24 +111,12 @@ public class AuthorizationRequestService : IAuthorizationService
 
             await _context.SaveChangesAsync();
 
-            foreach (var authorizationService
-                in servicesToCreate)
-            {
-                authorizationService.AuthId =
-                    authorizationRequest.AuthId;
-
-                _context.AuthorizationServices
-                    .Add(authorizationService);
-            }
-
-            var auditHistory =
+            _context.AuditHistories.Add(
                 new AuditHistory
                 {
-                    EncounterId =
-                        dto.EncounterId,
+                    EncounterId = dto.EncounterId,
 
-                    AuthId =
-                        authorizationRequest.AuthId,
+                    AuthId = authorizationRequest.AuthId,
 
                     EntityId =
                         $"Authorization-{authorizationRequest.AuthId}",
@@ -179,14 +128,11 @@ public class AuthorizationRequestService : IAuthorizationService
                         (byte)UserRole.Specialist,
 
                     Remarks =
-                        $"Authorization request created. Estimated Amount: {totalAmount}",
+                        "Authorization request created in Draft status.",
 
                     CreatedAt =
                         DateTime.UtcNow
-                };
-
-            _context.AuditHistories
-                .Add(auditHistory);
+                });
 
             await _context.SaveChangesAsync();
 
@@ -199,5 +145,227 @@ public class AuthorizationRequestService : IAuthorizationService
             await transaction.RollbackAsync();
             throw;
         }
+    }
+    public async Task AddServiceAsync(
+    int authId,
+    AddAuthorizationServiceDto dto)
+    {
+        var authorization =
+            await _context.AuthorizationRequests
+                .FirstOrDefaultAsync(a =>
+                    a.AuthId == authId);
+
+        if (authorization == null)
+        {
+            throw new NotFoundException(
+                $"Authorization Request {authId} not found.");
+        }
+
+        if (authorization.Status !=
+            (byte)RequestStatus.Draft)
+        {
+            throw new ConflictException(
+                "Services can only be modified in Draft status.");
+        }
+
+        var cpt =
+            await _context.Cptcodes
+                .FirstOrDefaultAsync(c =>
+                    c.CptCode1 == dto.CptCode);
+
+        if (cpt == null)
+        {
+            throw new NotFoundException(
+                $"CPT Code '{dto.CptCode}' not found.");
+        }
+
+        var icdExists =
+            await _context.Icdcodes
+                .AnyAsync(i =>
+                    i.IcdCode1 == dto.IcdCode);
+
+        if (!icdExists)
+        {
+            throw new NotFoundException(
+                $"ICD Code '{dto.IcdCode}' not found.");
+        }
+
+        var service =
+            new AuthorizationService
+            {
+                AuthId = authId,
+
+                CptCode = dto.CptCode,
+
+                IcdCode = dto.IcdCode,
+
+                EstimatedCost = cpt.EstimatedCost,
+
+                Notes = dto.Notes,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+        _context.AuthorizationServices.Add(service);
+
+        _context.AuditHistories.Add(
+            new AuditHistory
+            {
+                AuthId = authId,
+
+                EncounterId = authorization.EncounterId,
+
+                EntityId = $"Service-{dto.CptCode}",
+
+                ActionType =
+                    (byte)AuditActionType.Created,
+
+                PerformedByRole =
+                    (byte)UserRole.Specialist,
+
+                Remarks =
+                    $"Added service CPT {dto.CptCode}",
+
+                CreatedAt =
+                    DateTime.UtcNow
+            });
+
+        await _context.SaveChangesAsync();
+    }
+    public async Task<List<AuthorizationServiceResponseDto>>
+    GetServicesAsync(int authId)
+    {
+        var authorizationExists =
+            await _context.AuthorizationRequests
+                .AnyAsync(a => a.AuthId == authId);
+
+        if (!authorizationExists)
+        {
+            throw new NotFoundException(
+                $"Authorization Request {authId} not found.");
+        }
+
+        return await _context.AuthorizationServices
+            .Where(s => s.AuthId == authId)
+            .Select(s => new AuthorizationServiceResponseDto
+            {
+                ServiceId = s.ServiceId,
+                CptCode = s.CptCode,
+                IcdCode = s.IcdCode,
+                EstimatedCost = s.EstimatedCost,
+                Notes = s.Notes
+            })
+            .ToListAsync();
+    }
+    public async Task RemoveServiceAsync(
+    int authId,
+    int serviceId)
+    {
+        var authorization =
+            await _context.AuthorizationRequests
+                .FirstOrDefaultAsync(a =>
+                    a.AuthId == authId);
+
+        if (authorization == null)
+        {
+            throw new NotFoundException(
+                $"Authorization Request {authId} not found.");
+        }
+
+        if (authorization.Status !=
+            (byte)RequestStatus.Draft)
+        {
+            throw new ConflictException(
+                "Services can only be modified in Draft status.");
+        }
+
+        var service =
+            await _context.AuthorizationServices
+                .FirstOrDefaultAsync(s =>
+                    s.ServiceId == serviceId &&
+                    s.AuthId == authId);
+
+        if (service == null)
+        {
+            throw new NotFoundException(
+                $"Service {serviceId} not found.");
+        }
+
+        _context.AuthorizationServices.Remove(service);
+
+        await _context.SaveChangesAsync();
+    }
+    public async Task SubmitAuthorizationRequestAsync(
+    int authId)
+    {
+        var authorization =
+            await _context.AuthorizationRequests
+                .FirstOrDefaultAsync(a =>
+                    a.AuthId == authId);
+
+        if (authorization == null)
+        {
+            throw new NotFoundException(
+                $"Authorization Request {authId} not found.");
+        }
+
+        if (authorization.Status !=
+            (byte)RequestStatus.Draft)
+        {
+            throw new ConflictException(
+                "Only draft authorization requests can be submitted.");
+        }
+
+        var services =
+            await _context.AuthorizationServices
+                .Where(s => s.AuthId == authId)
+                .ToListAsync();
+
+        if (!services.Any())
+        {
+            throw new BadRequestException(
+                "At least one service must be attached before submission.");
+        }
+
+        var totalAmount =
+            services.Sum(s => s.EstimatedCost);
+
+        authorization.EstimatedTotalAmount =
+            totalAmount;
+
+        authorization.Status =
+            (byte)RequestStatus.Submitted;
+
+        authorization.SubmittedAt =
+            DateTime.UtcNow;
+
+        authorization.UpdatedAt =
+            DateTime.UtcNow;
+
+        _context.AuditHistories.Add(
+            new AuditHistory
+            {
+                AuthId = authorization.AuthId,
+
+                EncounterId =
+                    authorization.EncounterId,
+
+                EntityId =
+                    $"Authorization-{authorization.AuthId}",
+
+                ActionType =
+                    (byte)AuditActionType.Updated,
+
+                PerformedByRole =
+                    (byte)UserRole.Specialist,
+
+                Remarks =
+                    $"Authorization submitted. Total Amount: {totalAmount}",
+
+                CreatedAt =
+                    DateTime.UtcNow
+            });
+
+        await _context.SaveChangesAsync();
     }
 }
