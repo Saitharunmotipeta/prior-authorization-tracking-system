@@ -1,0 +1,1 @@
+place the helper function sin here
