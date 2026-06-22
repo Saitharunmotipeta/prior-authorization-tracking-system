@@ -1,0 +1,1 @@
+write input and output interfaces

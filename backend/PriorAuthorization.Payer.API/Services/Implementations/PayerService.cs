@@ -6,6 +6,7 @@ using PriorAuthorization.Shared.Data;
 using PriorAuthorization.Shared.Entities;
 using PriorAuthorization.Shared.Enums;
 using PriorAuthorization.Shared.Exceptions;
+using PriorAuthorization.Shared.Utilities;
 using PriorAuthorization.Shared.Middleware;
 using PriorAuthorization.Shared.Validations;
 using System;
@@ -24,85 +25,119 @@ public class PayerService : IPayerService
 
     public async Task<List<FacilityDto>> GetFacilities()
     {
-        _logger.LogInformation("Fetching facilities with pending request counts");
+        var stopwatch =
+            StopwatchUtility.Start();
 
-        try
-        {
-            // ✅ Step 1: Get all facilities
-            var facilities = await _context.Facilities
+        _logger.LogInformation(
+            "GetFacilities started");
+
+        var result =
+            await _context.Facilities
                 .AsNoTracking()
-                .ToListAsync();
-
-            // ✅ Step 2: Get pending counts grouped by facility
-            var pendingCounts = await _context.AuthorizationRequests
-                .Where(a =>
-                    a.Status == (byte)RequestStatus.Submitted ||
-                    a.Status == (byte)RequestStatus.UnderReview ||
-                    a.Status == (byte)RequestStatus.AdditionalInfoRequired
-                )
-                .GroupBy(a => a.Encounter.FacilityId)
-                .Select(g => new
+                .Select(f => new FacilityDto
                 {
-                    FacilityId = g.Key,
-                    Count = g.Count()
+                    FacilityId =
+                        f.FacilityId,
+
+                    FacilityName =
+                        f.FacilityName,
+
+                    PendingCount =
+                        _context.AuthorizationRequests
+                            .Count(a =>
+                                a.Encounter.FacilityId ==
+                                f.FacilityId &&
+                                (
+                                    a.Status ==
+                                    (byte)RequestStatus.Submitted ||
+
+                                    a.Status ==
+                                    (byte)RequestStatus.UnderReview ||
+
+                                    a.Status ==
+                                    (byte)RequestStatus.AdditionalInfoRequired
+                                ))
                 })
                 .ToListAsync();
 
-           
-            var result = facilities.Select(f => new FacilityDto
-            {
-                FacilityId = f.FacilityId,
-                FacilityName = f.FacilityName,
-
-                PendingCount = pendingCounts
-                    .FirstOrDefault(x => x.FacilityId == f.FacilityId)?.Count ?? 0
-            }).ToList();
-
-            _logger.LogInformation("Fetched {Count} facilities", result.Count);
-
-            return result;
-        }
-        catch (Exception ex)
+        if (!result.Any())
         {
-            _logger.LogError(ex, "Error occurred while fetching facilities");
+            _logger.LogWarning(
+                "No facilities found");
 
-            throw new InternalServerException("Failed to fetch facilities");
-
+            throw new NotFoundException(
+                "No facilities found.");
         }
+
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetFacilities completed in {ElapsedMs} ms. Facilities Returned: {Count}",
+            elapsedMs,
+            result.Count);
+
+        return result;
     }
 
 
-    public async Task<List<RequestLists>> GetRequestsByFacility(int facilityId)
+    public async Task<List<RequestLists>> GetRequestsByFacility(
+       int facilityId)
     {
-        _logger.LogInformation("Fetching authorization requests for FacilityId: {FacilityId}", facilityId);
+        var stopwatch =
+            StopwatchUtility.Start();
 
-        try
+        _logger.LogInformation(
+            "GetRequestsByFacility started. FacilityId: {FacilityId}",
+            facilityId);
+
+        if (facilityId <= 0)
         {
-            // ✅ Validate input
-            if (facilityId <= 0)
-                throw new BadRequestException("Invalid facility id");
+            _logger.LogWarning(
+                "Invalid FacilityId received: {FacilityId}",
+                facilityId);
 
-            // ✅ Optional: Check if facility exists (important edge case)
-            var facilityExists = await _context.Facilities
-                .AnyAsync(f => f.FacilityId == facilityId);
+            throw new ValidationException(
+                "FacilityId must be greater than zero.");
+        }
 
-            if (!facilityExists)
-                throw new NotFoundException("Facility not found");
-
-            var result = await _context.AuthorizationRequests
+        var facilityExists =
+            await _context.Facilities
                 .AsNoTracking()
+                .AnyAsync(x =>
+                    x.FacilityId ==
+                    facilityId);
 
-                // ✅ Filtering FIRST (important for performance)
+        if (!facilityExists)
+        {
+            _logger.LogWarning(
+                "Facility not found. FacilityId: {FacilityId}",
+                facilityId);
+
+            throw new NotFoundException(
+                $"Facility {facilityId} not found.");
+        }
+
+        var result =
+            await _context.AuthorizationRequests
+                .AsNoTracking()
+                .Include(a => a.Encounter)
+                    .ThenInclude(e => e.Patient)
+                .Include(a => a.Encounter.Facility)
                 .Where(a =>
-                    a.Encounter.FacilityId == facilityId &&
+                    a.Encounter.FacilityId ==
+                    facilityId &&
                     (
-                        a.Status == (byte)RequestStatus.Submitted ||
-                        a.Status == (byte)RequestStatus.UnderReview ||
-                        a.Status == (byte)RequestStatus.AdditionalInfoRequired
-                    )
-                )
+                        a.Status ==
+                        (byte)RequestStatus.Submitted ||
 
-                // ✅ Projection (EF will auto join only required data)
+                        a.Status ==
+                        (byte)RequestStatus.UnderReview ||
+
+                        a.Status ==
+                        (byte)RequestStatus.AdditionalInfoRequired
+                    ))
                 .Select(a => new
                 {
                     Data = new RequestLists
@@ -117,364 +152,522 @@ public class PayerService : IPayerService
                         EstimatedAmount = a.EstimatedTotalAmount,
                         SubmittedAt = a.SubmittedAt
                     },
-                    ConditionOrder = a.Encounter.ConditionType
+
+                    ConditionOrder =
+                        a.Encounter.ConditionType
                 })
-
-                // ✅ Sorting (priority-based queue)
-                .OrderByDescending(x => x.ConditionOrder)        // Emergency → Urgent → Normal
-                .ThenByDescending(x => x.Data.SubmittedAt)       // latest first
-
-                .Select(x => x.Data)
+                .OrderByDescending(x =>
+                    x.ConditionOrder)
+                .ThenByDescending(x =>
+                    x.Data.SubmittedAt)
+                .Select(x =>
+                    x.Data)
                 .ToListAsync();
 
-            _logger.LogInformation(
-                "Fetched {Count} requests for FacilityId: {FacilityId}",
-                result.Count,
+        if (!result.Any())
+        {
+            _logger.LogWarning(
+                "No pending requests found for FacilityId: {FacilityId}",
                 facilityId);
 
-            return result;
+            throw new NotFoundException(
+                $"No pending requests found for facility {facilityId}.");
         }
-        catch (AppException)
-        {
-            throw; // ✅ Already handled properly
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Error occurred while fetching requests for FacilityId: {FacilityId}",
-                facilityId);
 
-            throw new InternalServerException("Failed to fetch authorization requests");
-        }
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetRequestsByFacility completed in {ElapsedMs} ms. Requests Returned: {Count}",
+            elapsedMs,
+            result.Count);
+
+        return result;
     }
 
-    public async Task<RequestsDetails> GetAuthorizationDetails(int authId)
+    public async Task<RequestsDetails> GetAuthorizationDetails(
+        int authId)
     {
-        _logger.LogInformation("Fetching authorization details for AuthId: {AuthId}", authId);
+        var stopwatch =
+            StopwatchUtility.Start();
 
-        try
+        _logger.LogInformation(
+            "GetAuthorizationDetails started. AuthId: {AuthId}",
+            authId);
+
+        if (authId <= 0)
         {
-            // ✅ Validate input
-            if (authId <= 0)
-                throw new BadRequestException("Invalid authorization id");
-
-            var auth = await _context.AuthorizationRequests
-                .AsNoTracking()
-
-                // ✅ Project directly (NO Include needed)
-                .Where(a => a.AuthId == authId)
-                .Select(a => new RequestsDetails
-                {
-                    AuthId = a.AuthId,
-                    EncounterId = a.EncounterId,
-
-                    // ✅ Patient Info
-                    PatientName = a.Encounter.Patient.FullName,
-                    Dob = a.Encounter.Patient.Dob,
-                    Gender = a.Encounter.Patient.Gender,
-                    PhoneNumber = a.Encounter.Patient.PhoneNumber,
-
-                    // ✅ Facility & Department
-                    FacilityName = a.Encounter.Facility.FacilityName,
-                    DepartmentName = a.Encounter.Department.DepartmentName,
-
-                    // ✅ Condition & Priority
-                    ConditionType = a.Encounter.ConditionType.ToString(),
-                    Priority = a.Priority.ToString(),
-
-                    // ✅ Authorization Info
-                    Status = a.Status.ToString(),
-                    EstimatedAmount = a.EstimatedTotalAmount,
-                    ApprovedAmount = a.ApprovedAmount,
-                    SubmittedAt = a.SubmittedAt,
-                    ReviewedAt = a.ReviewedAt,
-
-                    // ✅ Documents
-                    Documents = new DocumentVerificationDto
-                    {
-                        IdentificationVerified = a.Encounter.IdentificationVerified,
-                        PrescriptionVerified = a.Encounter.PrescriptionVerified,
-                        ScanVerified = a.Encounter.ScanVerified,
-                        DoctorNotesVerified = a.Encounter.DoctorNotesVerified,
-                        InsuranceCardVerified = a.Encounter.InsuranceCardVerified
-                    },
-
-                    // ✅ Services
-                    Services = a.AuthorizationServices
-                        .Select(s => new ServiceDto
-                        {
-                            CptCode = s.CptCode,
-                            IcdCode = s.IcdCode,
-                            EstimatedCost = s.EstimatedCost,
-                            Notes = s.Notes
-                        })
-                        .ToList()
-                })
-                .FirstOrDefaultAsync();
-
-            // ✅ Not found case
-            if (auth == null)
-            {
-                _logger.LogWarning("Authorization not found for AuthId: {AuthId}", authId);
-                throw new NotFoundException("Authorization request not found");
-            }
-
-            _logger.LogInformation("Successfully fetched authorization details for AuthId: {AuthId}", authId);
-
-            return auth;
-        }
-        catch (AppException)
-        {
-            throw; // already handled properly
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Error occurred while fetching authorization details for AuthId: {AuthId}",
+            _logger.LogWarning(
+                "Invalid AuthId received: {AuthId}",
                 authId);
 
-            throw new InternalServerException("Failed to fetch authorization details");
+            throw new ValidationException(
+                "AuthId must be greater than zero.");
         }
-    }
 
-    public async Task<bool> ReviewAuthorization(int authId, ReviewRequest dto)
-    {
-        _logger.LogInformation("Review action {Action} started for AuthId: {AuthId}", dto.Action, authId);
+        var auth =
+            await _context.AuthorizationRequests
+                .AsNoTracking()
+                .Include(a => a.Encounter)
+                    .ThenInclude(e => e.Patient)
+                .Include(a => a.Encounter.Facility)
+                .Include(a => a.Encounter.Department)
+                .Include(a => a.AuthorizationServices)
+                .FirstOrDefaultAsync(a =>
+                    a.AuthId == authId);
 
-        try
+        if (auth == null)
         {
-            // ✅ Validate input
-            if (authId <= 0)
-                throw new BadRequestException("Invalid authorization id");
+            _logger.LogWarning(
+                "Authorization not found. AuthId: {AuthId}",
+                authId);
 
-            if (dto == null)
-                throw new BadRequestException("Request data is required");
+            throw new NotFoundException(
+                $"Authorization request {authId} not found.");
+        }
 
-            var auth = await _context.AuthorizationRequests
-                .FirstOrDefaultAsync(x => x.AuthId == authId);
-
-            // ✅ Not found
-            if (auth == null)
+        var result =
+            new RequestsDetails
             {
-                _logger.LogWarning("Authorization not found for AuthId: {AuthId}", authId);
-                throw new NotFoundException("Authorization request not found");
-            }
-
-            // ✅ Prevent re-processing (VERY important)
-            if (auth.Status == (byte)RequestStatus.Approved ||
-                auth.Status == (byte)RequestStatus.Denied)
-            {
-                throw new BadRequestException("Authorization already finalized. Cannot modify further.");
-            }
-
-            var oldStatus = auth.Status;
-            var oldApprovedAmount = auth.ApprovedAmount;
-
-            switch (dto.Action)
-            {
-                case ReviewActionType.Approve:
-
-                    // ✅ Validation
-                    if (!dto.ApprovedAmount.HasValue)
-                        throw new BadRequestException("Approved amount is required");
-
-                    if (dto.ApprovedAmount <= 0)
-                        throw new BadRequestException("Approved amount must be greater than 0");
-
-                    if (dto.ApprovedAmount > auth.EstimatedTotalAmount)
-                        throw new BadRequestException("Approved amount cannot exceed estimated amount");
-
-                    auth.Status = (byte)RequestStatus.Approved;
-                    auth.ApprovedAmount = dto.ApprovedAmount;
-                    auth.ReviewedAt = DateTime.UtcNow;
-                    break;
-
-                case ReviewActionType.Deny:
-
-                    if (string.IsNullOrWhiteSpace(dto.Remarks))
-                        throw new BadRequestException("Remarks are required when denying a request");
-
-                    auth.Status = (byte)RequestStatus.Denied;
-                    auth.ReviewedAt = DateTime.UtcNow;
-                    break;
-
-                case ReviewActionType.RequestMoreInfo:
-
-                    if (string.IsNullOrWhiteSpace(dto.Remarks))
-                        throw new BadRequestException("Remarks are required when requesting more information");
-
-                    auth.Status = (byte)RequestStatus.AdditionalInfoRequired;
-                    auth.ReviewedAt = DateTime.UtcNow;
-                    break;
-
-                default:
-                    throw new BadRequestException("Invalid review action");
-            }
-
-            // ✅ Always update UpdatedAt
-            auth.UpdatedAt = DateTime.UtcNow;
-
-            // ✅ Audit log
-            var audit = new AuditHistory
-            {
-                EncounterId = auth.EncounterId,
                 AuthId = auth.AuthId,
 
-                ActionType = dto.Action switch
-                {
-                    ReviewActionType.Approve => (byte)AuditActionType.Approved,
-                    ReviewActionType.Deny => (byte)AuditActionType.Denied,
-                    ReviewActionType.RequestMoreInfo => (byte)AuditActionType.RequestedMoreInfo,
-                    _ => (byte)AuditActionType.Updated
-                },
+                EncounterId =
+                    auth.EncounterId,
 
-                OldValue = $"Status: {(RequestStatus)oldStatus}, ApprovedAmount: {oldApprovedAmount}",
+                PatientName =
+                    auth.Encounter.Patient.FullName,
 
-                NewValue = $"Status: {(RequestStatus)auth.Status}, ApprovedAmount: {auth.ApprovedAmount}",
+                Dob =
+                    auth.Encounter.Patient.Dob,
 
-                PerformedByRole = (byte)UserRole.Payer,
+                Gender =
+                    auth.Encounter.Patient.Gender,
 
-                Remarks = dto.Remarks,
+                PhoneNumber =
+                    auth.Encounter.Patient.PhoneNumber,
 
-                CreatedAt = DateTime.UtcNow
+                FacilityName =
+                    auth.Encounter.Facility.FacilityName,
+
+                DepartmentName =
+                    auth.Encounter.Department.DepartmentName,
+
+                ConditionType =
+                    auth.Encounter.ConditionType.ToString(),
+
+                Priority =
+                    auth.Priority.ToString(),
+
+                Status =
+                    auth.Status.ToString(),
+
+                EstimatedAmount =
+                    auth.EstimatedTotalAmount,
+
+                ApprovedAmount =
+                    auth.ApprovedAmount,
+
+                SubmittedAt =
+                    auth.SubmittedAt,
+
+                ReviewedAt =
+                    auth.ReviewedAt,
+
+                Documents =
+                    new DocumentVerificationDto
+                    {
+                        IdentificationVerified =
+                            auth.Encounter.IdentificationVerified,
+
+                        PrescriptionVerified =
+                            auth.Encounter.PrescriptionVerified,
+
+                        ScanVerified =
+                            auth.Encounter.ScanVerified,
+
+                        DoctorNotesVerified =
+                            auth.Encounter.DoctorNotesVerified,
+
+                        InsuranceCardVerified =
+                            auth.Encounter.InsuranceCardVerified
+                    },
+
+                Services =
+                    auth.AuthorizationServices
+                        .Select(s =>
+                            new ServiceDto
+                            {
+                                CptCode =
+                                    s.CptCode,
+
+                                IcdCode =
+                                    s.IcdCode,
+
+                                EstimatedCost =
+                                    s.EstimatedCost,
+
+                                Notes =
+                                    s.Notes
+                            })
+                        .ToList()
             };
-            
-            _context.AuditHistories.Add(audit);
 
-            await _context.SaveChangesAsync();
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
 
-            _logger.LogInformation(
-                "Review action {Action} completed successfully for AuthId: {AuthId}",
-                dto.Action, authId);
+        _logger.LogInformation(
+            "GetAuthorizationDetails completed in {ElapsedMs} ms. AuthId: {AuthId}",
+            elapsedMs,
+            authId);
+        return result;
 
-            return true;
         }
-        catch (AppException)
+
+    public async Task<bool> ReviewAuthorization(
+        int authId,
+        ReviewRequest dto)
+    {
+        var stopwatch =
+            StopwatchUtility.Start();
+
+        _logger.LogInformation(
+            "ReviewAuthorization started. AuthId: {AuthId}, Action: {Action}",
+            authId,
+            dto?.Action);
+
+        if (authId <= 0)
         {
-            throw; // ✅ handled by middleware
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Error occurred while reviewing authorization for AuthId: {AuthId}",
+            _logger.LogWarning(
+                "Invalid AuthId received: {AuthId}",
                 authId);
 
-            throw new InternalServerException("Failed to process authorization review");
+            throw new ValidationException(
+                "AuthId must be greater than zero.");
         }
+
+        if (dto == null)
+        {
+            _logger.LogWarning(
+                "Review request payload is null. AuthId: {AuthId}",
+                authId);
+
+            throw new ValidationException(
+                "Review request is required.");
+        }
+
+        var auth =
+            await _context.AuthorizationRequests
+                .FirstOrDefaultAsync(x =>
+                    x.AuthId == authId);
+
+        if (auth == null)
+        {
+            _logger.LogWarning(
+                "Authorization not found. AuthId: {AuthId}",
+                authId);
+
+            throw new NotFoundException(
+                $"Authorization request {authId} not found.");
+        }
+
+        var oldStatus =
+            auth.Status;
+
+        var oldApprovedAmount =
+            auth.ApprovedAmount;
+
+        switch (dto.Action)
+        {
+            case ReviewActionType.Approve:
+
+                if (!dto.ApprovedAmount.HasValue)
+                {
+                    throw new ValidationException(
+                        "Approved amount is required for approval.");
+                }
+
+                if (dto.ApprovedAmount <= 0)
+                {
+                    throw new ValidationException(
+                        "Approved amount must be greater than zero.");
+                }
+
+                if (dto.ApprovedAmount >
+                    auth.EstimatedTotalAmount)
+                {
+                    throw new ValidationException(
+                        "Approved amount cannot be greater than estimated amount.");
+                }
+
+                auth.Status =
+                    (byte)RequestStatus.Approved;
+
+                auth.ApprovedAmount =
+                    dto.ApprovedAmount;
+
+                auth.ReviewedAt =
+                    DateTime.UtcNow;
+
+                break;
+
+            case ReviewActionType.Deny:
+
+                auth.Status =
+                    (byte)RequestStatus.Denied;
+
+                auth.ReviewedAt =
+                    DateTime.UtcNow;
+
+                break;
+
+            case ReviewActionType.RequestMoreInfo:
+
+                auth.Status =
+                    (byte)RequestStatus.AdditionalInfoRequired;
+
+                auth.ReviewedAt =
+                    DateTime.UtcNow;
+
+                break;
+
+            default:
+
+                throw new ValidationException(
+                    "Invalid review action.");
+        }
+
+        auth.UpdatedAt =
+            DateTime.UtcNow;
+
+        var audit =
+            new AuditHistory
+            {
+                EncounterId =
+                    auth.EncounterId,
+
+                AuthId =
+                    auth.AuthId,
+
+                ActionType =
+                    dto.Action switch
+                    {
+                        ReviewActionType.Approve =>
+                            (byte)AuditActionType.Approved,
+
+                        ReviewActionType.Deny =>
+                            (byte)AuditActionType.Denied,
+
+                        ReviewActionType.RequestMoreInfo =>
+                            (byte)AuditActionType.RequestedMoreInfo,
+
+                        _ =>
+                            (byte)AuditActionType.Updated
+                    },
+
+                OldValue =
+                    $"Status: {(RequestStatus)oldStatus}, ApprovedAmount: {oldApprovedAmount}",
+
+                NewValue =
+                    $"Status: {(RequestStatus)auth.Status}, ApprovedAmount: {auth.ApprovedAmount}",
+
+                PerformedByRole =
+                    (byte)UserRole.Payer,
+
+                Remarks =
+                    dto.Remarks,
+
+                CreatedAt =
+                    DateTime.UtcNow
+            };
+
+        _context.AuditHistories.Add(
+            audit);
+
+        await _context.SaveChangesAsync();
+
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "ReviewAuthorization completed in {ElapsedMs} ms. AuthId: {AuthId}, Action: {Action}",
+            elapsedMs,
+            authId,
+            dto.Action);
+        return true;
     }
 
     public async Task<List<RequestLists>> GetEmergencyRequests()
     {
-        _logger.LogInformation("Fetching emergency pending requests");
+        var stopwatch =
+            StopwatchUtility.Start();
 
-        try
-        {
-            var result = await _context.AuthorizationRequests
+        _logger.LogInformation(
+            "GetEmergencyRequests started");
+
+        var result =
+            await _context.AuthorizationRequests
                 .AsNoTracking()
-
-                // ✅ Filter FIRST (important for performance)
+                .Include(a => a.Encounter)
+                    .ThenInclude(e => e.Patient)
+                .Include(a => a.Encounter.Facility)
                 .Where(a =>
-                    a.Encounter.ConditionType == (byte)ConditionType.Emergency &&
+                    a.Encounter.ConditionType ==
+                    (byte)ConditionType.Emergency &&
                     (
-                        a.Status == (byte)RequestStatus.Submitted ||
-                        a.Status == (byte)RequestStatus.UnderReview ||
-                        a.Status == (byte)RequestStatus.AdditionalInfoRequired
-                    )
-                )
+                        a.Status ==
+                        (byte)RequestStatus.Submitted ||
 
-                // ✅ Projection (NO Include needed)
+                        a.Status ==
+                        (byte)RequestStatus.UnderReview ||
+
+                        a.Status ==
+                        (byte)RequestStatus.AdditionalInfoRequired
+                    ))
                 .Select(a => new RequestLists
                 {
-                    AuthId = a.AuthId,
-                    EncounterId = a.EncounterId,
-                    PatientName = a.Encounter.Patient.FullName,
-                    FacilityName = a.Encounter.Facility.FacilityName,
-                    ConditionType = a.Encounter.ConditionType.ToString(),
-                    Priority = a.Priority.ToString(),
-                    Status = a.Status.ToString(),
-                    EstimatedAmount = a.EstimatedTotalAmount,
-                    SubmittedAt = a.SubmittedAt
+                    AuthId =
+                        a.AuthId,
+
+                    EncounterId =
+                        a.EncounterId,
+
+                    PatientName =
+                        a.Encounter.Patient.FullName,
+
+                    FacilityName =
+                        a.Encounter.Facility.FacilityName,
+
+                    ConditionType =
+                        a.Encounter.ConditionType.ToString(),
+
+                    Priority =
+                        a.Priority.ToString(),
+
+                    Status =
+                        a.Status.ToString(),
+
+                    EstimatedAmount =
+                        a.EstimatedTotalAmount,
+
+                    SubmittedAt =
+                        a.SubmittedAt
                 })
-
-                // ✅ Sorting (latest first)
-                .OrderByDescending(x => x.SubmittedAt)
-
+                .OrderByDescending(x =>
+                    x.SubmittedAt)
                 .ToListAsync();
 
-            _logger.LogInformation("Fetched {Count} emergency requests", result.Count);
-
-            return result;
-        }
-        catch (AppException)
+        if (!result.Any())
         {
-            throw; // ✅ already handled
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while fetching emergency requests");
+            _logger.LogWarning(
+                "No emergency authorization requests found");
 
-            throw new InternalServerException("Failed to fetch emergency requests");
+            throw new NotFoundException(
+                "No emergency authorization requests found.");
         }
+
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetEmergencyRequests completed in {ElapsedMs} ms. Requests Returned: {Count}",
+            elapsedMs,
+            result.Count);
+
+        return result;
     }
 
     public async Task<ReminderListResponseDto> GetReminders()
     {
-        _logger.LogInformation("Fetching reminders with pending count");
+        var stopwatch =
+            StopwatchUtility.Start();
 
-        try
-        {
-            // ✅ Fetch only required fields (no full entity load)
-            var reminders = await _context.Reminders
+        _logger.LogInformation(
+            "GetReminders started");
+
+        var reminders =
+            await _context.Reminders
                 .AsNoTracking()
-
-                // ✅ Sorting: active first (Requested + Scheduled), then latest
                 .OrderBy(r =>
-                    r.Status == (byte)ReminderStatus.Completed ||
-                    r.Status == (byte)ReminderStatus.Cancelled
-                )
-                .ThenByDescending(r => r.ScheduledAt)
-
-                // ✅ Projection
-                .Select(r => new ReminderDto
-                {
-                    ReminderId = r.ReminderId,
-                    AuthId = r.AuthId,
-                    Category = ((ReminderCategory)r.Category).ToString(),
-                    Status = ((ReminderStatus)r.Status).ToString(),
-                    ScheduledAt = r.ScheduledAt,
-                    CompletedAt = r.CompletedAt,
-                    Remarks = r.Remarks,
-                    UpdatedAt = r.UpdatedAt
-                })
+                    r.Status)
+                .ThenByDescending(r =>
+                    r.ScheduledAt)
                 .ToListAsync();
 
-            // ✅ Pending (Active) Count: Requested + Scheduled
-            var pendingCount = await _context.Reminders
-                .Where(r =>
-                    r.Status == (byte)ReminderStatus.Requested ||
-                    r.Status == (byte)ReminderStatus.Scheduled
-                )
-                .CountAsync();
+        if (!reminders.Any())
+        {
+            _logger.LogWarning(
+                "No reminders found");
 
-            _logger.LogInformation("Fetched {Count} reminders, PendingCount: {PendingCount}",
-                reminders.Count, pendingCount);
+            throw new NotFoundException(
+                "No reminders found.");
+        }
 
-            return new ReminderListResponseDto
+        var pendingCount =
+            reminders.Count(r =>
+                r.Status ==
+                (byte)ReminderStatus.Requested ||
+
+                r.Status ==
+                (byte)ReminderStatus.Scheduled);
+
+        var data =
+            reminders
+                .Select(r =>
+                    new ReminderDto
+                    {
+                        ReminderId =
+                            r.ReminderId,
+
+                        AuthId =
+                            r.AuthId,
+
+                        Category =
+                            ((ReminderCategory)r.Category)
+                            .ToString(),
+
+                        Status =
+                            ((ReminderStatus)r.Status)
+                            .ToString(),
+
+                        ScheduledAt =
+                            r.ScheduledAt,
+
+                        CompletedAt =
+                            r.CompletedAt,
+
+                        Remarks =
+                            r.Remarks,
+
+                        UpdatedAt =
+                            r.UpdatedAt
+                    })
+                .ToList();
+
+        var result =
+            new ReminderListResponseDto
             {
-                PendingCount = pendingCount,
-                Data = reminders
-            };
-        }
-        catch (AppException)
-        {
-            throw; // ✅ already handled
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while fetching reminders");
+                PendingCount =
+                    pendingCount,
 
-            throw new InternalServerException("Failed to fetch reminders");
-        }
+                Data =
+                    data
+            };
+
+        var elapsedMs =
+            StopwatchUtility.Stop(
+                stopwatch);
+
+        _logger.LogInformation(
+            "GetReminders completed in {ElapsedMs} ms. Total Reminders: {TotalCount}, Pending Reminders: {PendingCount}",
+            elapsedMs,
+            data.Count,
+            pendingCount);
+
+        return result;
     }
 
 }

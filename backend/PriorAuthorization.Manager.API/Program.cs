@@ -18,7 +18,7 @@ Log.Logger =
             shared: true)
         .CreateLogger();
 
-builder.Host.UseSerilog();
+//builder.Host.UseSerilog();
 
 // Controllers
 

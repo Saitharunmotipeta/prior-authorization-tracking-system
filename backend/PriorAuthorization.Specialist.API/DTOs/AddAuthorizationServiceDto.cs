@@ -1,5 +1,5 @@
 ﻿namespace PriorAuthorization.Specialist.API.DTOs;
-public class CreateAuthorizationServiceDto
+public class AddAuthorizationServiceDto
 {
     public string CptCode { get; set; } = string.Empty;
 

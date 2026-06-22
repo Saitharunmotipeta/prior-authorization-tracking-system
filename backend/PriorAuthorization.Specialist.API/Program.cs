@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PriorAuthorization.Shared.Data;
 using PriorAuthorization.Shared.Middleware;
 using PriorAuthorization.Shared.Validations;
+using PriorAuthorization.Specialist.API.Services;
 using PriorAuthorization.Specialist.API.Services.Implementations;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 using PriorAuthorizationSpecialist.API.Services.Implementations;
@@ -20,7 +21,7 @@ Log.Logger =
             shared: true)
         .CreateLogger();
 
-builder.Host.UseSerilog();
+//builder.Host.UseSerilog();
 
 // Services
 
@@ -45,6 +46,7 @@ builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IPatientLookupService, PatientLookupService>();
 builder.Services.AddScoped<IEncounterService, EncounterService>();
 builder.Services.AddScoped<IAuthorizationService,AuthorizationRequestService>();
+builder.Services.AddScoped<IReminderService, ReminderService>();
 
 builder.Services.AddModelValidationConfiguration();
 

@@ -368,4 +368,93 @@ public class AuthorizationRequestService : IAuthorizationService
 
         await _context.SaveChangesAsync();
     }
+    public async Task ResubmitAuthorizationAsync(
+    int authId,
+    ResubmitAuthorizationDto dto)
+    {
+        var authorization =
+            await _context.AuthorizationRequests
+                .FirstOrDefaultAsync(a =>
+                    a.AuthId == authId);
+
+        if (authorization == null)
+        {
+            throw new NotFoundException(
+                $"Authorization Request {authId} not found.");
+        }
+
+        if (authorization.Status !=
+            (byte)RequestStatus.AdditionalInfoRequired)
+        {
+            throw new ConflictException(
+                "Only requests awaiting additional information can be resubmitted.");
+        }
+
+        authorization.Status =
+            (byte)RequestStatus.ReSubmitted;
+
+        authorization.UpdatedAt =
+            DateTime.UtcNow;
+
+        _context.AuditHistories.Add(
+            new AuditHistory
+            {
+                AuthId =
+                    authorization.AuthId,
+
+                EncounterId =
+                    authorization.EncounterId,
+
+                EntityId =
+                    $"Authorization-{authorization.AuthId}",
+
+                ActionType =
+                    (byte)AuditActionType.Updated,
+
+                PerformedByRole =
+                    (byte)UserRole.Specialist,
+
+                Remarks =
+                    $"Authorization resubmitted. {dto.Remarks}",
+
+                CreatedAt =
+                    DateTime.UtcNow
+            });
+
+        await _context.SaveChangesAsync();
+    }
+    public async Task<List<AuthorizationTimelineDto>>
+    GetTimelineAsync(int authId)
+    {
+        var authorizationExists =
+            await _context.AuthorizationRequests
+                .AnyAsync(a =>
+                    a.AuthId == authId);
+
+        if (!authorizationExists)
+        {
+            throw new NotFoundException(
+                $"Authorization Request {authId} not found.");
+        }
+
+        return await _context.AuditHistories
+            .Where(a =>
+                a.AuthId == authId)
+            .OrderBy(a =>
+                a.CreatedAt)
+            .Select(a =>
+                new AuthorizationTimelineDto
+                {
+                    Action =
+                        ((AuditActionType)a.ActionType)
+                            .ToString(),
+
+                    Remarks =
+                        a.Remarks,
+
+                    CreatedAt =
+                        a.CreatedAt
+                })
+            .ToListAsync();
+    }
 }
