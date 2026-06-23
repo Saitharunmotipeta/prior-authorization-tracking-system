@@ -27,4 +27,8 @@ public interface IAuthorizationService
 
     Task<List<AuthorizationTimelineDto>>
     GetTimelineAsync(int authId);
+
+    Task<List<AuthorizationTatResponse>>
+        GetTatPriorityQueueAsync(int facilityId);
+
 }

@@ -118,4 +118,16 @@ public class AuthorizationController : ControllerBase
                     timeline,
                     "Timeline retrieved successfully."));
     }
+    [HttpGet("tat-priority")]
+    public async Task<IActionResult>
+        GetTatPriorityQueue(
+            [FromQuery] int facilityId)
+    {
+        var result =
+            await _authorizationService
+                .GetTatPriorityQueueAsync(
+                    facilityId);
+
+        return Ok(result);
+    }
 }
