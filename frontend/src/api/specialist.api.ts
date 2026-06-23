@@ -22,6 +22,10 @@ import type {
   CreateAuthorizationResponse
 } from "../types/authorization.interface";
 
+import type {
+  AddAuthorizationServiceRequest
+} from "../types/authorization-service.interface";
+
 export const getFacilities = async () => {
   const response =
     await specialistApiClient.get<
@@ -121,6 +125,20 @@ export const verifyEncounter = async (
     const response =
       await specialistApiClient.post(
         "/api/Authorization",
+        request
+      );
+
+    return response.data;
+  };
+
+  export const addAuthorizationService =
+  async (
+    authorizationRequestId: number,
+    request: AddAuthorizationServiceRequest
+  ) => {
+    const response =
+      await specialistApiClient.post(
+        `/api/Authorization/${authorizationRequestId}/services`,
         request
       );
 
