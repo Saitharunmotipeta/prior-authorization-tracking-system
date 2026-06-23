@@ -51,4 +51,18 @@ public class ReminderController : ControllerBase
         return Ok(
             "Reminder status updated successfully.");
     }
+    [HttpGet]
+    public async Task<IActionResult> GetReminders(
+        [FromQuery] int? facilityId,
+        [FromQuery] int? payerId,
+        [FromQuery] byte? status)
+    {
+        var reminders = await _reminderService
+            .GetRemindersAsync(
+                facilityId,
+                payerId,
+                status);
+
+        return Ok(reminders);
+    }
 }
