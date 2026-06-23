@@ -41,7 +41,7 @@ export const useEncounterStore =
               );
 
             this.encounterId =
-              response.data.encounterId;
+              response.data;
 
             return response.data;
           }

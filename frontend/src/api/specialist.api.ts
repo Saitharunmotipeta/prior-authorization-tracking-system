@@ -17,6 +17,11 @@ import type {
   UpdateEncounterRequest
 } from "../types/documentVerification.interface";
 
+import type {
+  CreateAuthorizationRequest,
+  CreateAuthorizationResponse
+} from "../types/authorization.interface";
+
 export const getFacilities = async () => {
   const response =
     await specialistApiClient.get<
@@ -106,3 +111,18 @@ export const verifyEncounter = async (
 
   return response.data;
 };
+
+
+  export const createAuthorizationRequest =
+  async (
+    request:
+      CreateAuthorizationRequest
+  ) => {
+    const response =
+      await specialistApiClient.post(
+        "/api/Authorization",
+        request
+      );
+
+    return response.data;
+  };

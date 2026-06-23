@@ -53,6 +53,9 @@ const verifyDocuments =
   async () => {
     await documentStore
       .verifyDocuments();
+      router.push(
+  "/specialist/create-authorization"
+);
   };
 </script>
 

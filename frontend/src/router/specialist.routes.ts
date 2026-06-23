@@ -12,6 +12,9 @@ from "../pages/specialist/CreateEncounterPage.vue";
 import DocumentVerificationPage
 from "../pages/specialist/DocumentVerificationPage.vue";
 
+import CreateAuthorizationRequestPage 
+from "../pages/specialist/CreateAuthorizationRequestPage.vue";
+
 export const specialistRoutes: RouteRecordRaw[] = [
   {
     path: "/specialist",
@@ -35,5 +38,13 @@ export const specialistRoutes: RouteRecordRaw[] = [
   path: "/specialist/document-verification",
   name: "DocumentVerification",
   component: DocumentVerificationPage
+},
+{
+  path:
+    "/specialist/create-authorization",
+  name:
+    "CreateAuthorization",
+  component:
+    CreateAuthorizationRequestPage
 }
 ];
