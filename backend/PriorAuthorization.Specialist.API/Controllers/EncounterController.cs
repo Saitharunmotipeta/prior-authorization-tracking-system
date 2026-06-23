@@ -23,11 +23,10 @@ public class EncounterController : ControllerBase
         var encounterId =
             await _encounterService.CreateEncounterAsync(dto);
 
-        return Ok(new
-        {
-            EncounterId = encounterId,
-            Message = "Encounter created successfully."
-        });
+        return Ok(
+            ApiResponse<int>.SuccessResponse(
+                encounterId,
+                "Encounter created successfully."));
     }
 
     [HttpPatch("{encounterId}")]
@@ -40,14 +39,15 @@ public class EncounterController : ControllerBase
                 encounterId,
                 dto);
 
-        return Ok(new
-        {
-            Message = "Encounter updated successfully."
-        });
+        return Ok(
+            ApiResponse<string>.SuccessResponse(
+                null,
+                "Encounter updated successfully."));
     }
+
     [HttpPatch("{encounterId}/verify")]
     public async Task<IActionResult> VerifyEncounter(
-    int encounterId)
+        int encounterId)
     {
         await _encounterService
             .VerifyEncounterAsync(encounterId);

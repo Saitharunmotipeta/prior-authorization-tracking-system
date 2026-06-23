@@ -352,9 +352,13 @@ public class PayerService : IPayerService
         }
 
         var auth =
-            await _context.AuthorizationRequests
-                .FirstOrDefaultAsync(x =>
-                    x.AuthId == authId);
+     await _context.AuthorizationRequests
+         .FirstOrDefaultAsync(x =>
+             x.AuthId == authId &&
+             (
+                 x.Status == (byte)RequestStatus.Submitted ||
+                 x.Status == (byte)RequestStatus.ReSubmitted
+             ));
 
         if (auth == null)
         {
