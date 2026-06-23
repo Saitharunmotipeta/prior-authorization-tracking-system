@@ -368,4 +368,104 @@ public class AuthorizationRequestService : IAuthorizationService
 
         await _context.SaveChangesAsync();
     }
+    public async Task<List<AuthorizationTatResponse>>
+        GetTatPriorityQueueAsync(int facilityId)
+    {
+        var today = DateTime.UtcNow.Date;
+
+        var authRequests =
+    await (
+        from auth in _context.AuthorizationRequests
+
+        join payer in _context.Payers
+            on auth.PayerId equals payer.PayerId
+
+        join encounter in _context.Encounters
+            on auth.EncounterId equals encounter.EncounterId
+
+        where encounter.FacilityId == facilityId
+
+        where auth.SubmittedAt != null
+
+        where auth.Status != (byte)RequestStatus.Approved
+           && auth.Status != (byte)RequestStatus.Denied
+           && auth.Status != (byte)RequestStatus.Expired
+
+        select new
+        {
+            auth.AuthId,
+
+            payer.PayerName,
+
+            auth.Priority,
+
+            SubmittedAt =
+                auth.SubmittedAt!.Value,
+
+            TatDays =
+                auth.Priority ==
+                (byte)Priority.Normal
+                    ? payer.NormalTatDays
+                    : payer.UrgentTatDays
+        }
+    )
+    .ToListAsync();
+
+        var result =
+            authRequests
+            .Select(x =>
+            {
+                var expectedReviewDate =
+                    x.SubmittedAt.Date
+                    .AddDays(x.TatDays);
+
+                var daysLeft =
+                    (expectedReviewDate - today).Days;
+
+                string tatStatus;
+
+                if (daysLeft < 0)
+                {
+                    tatStatus =
+                        $"Overdue by {Math.Abs(daysLeft)} day(s)";
+                }
+                else if (daysLeft == 0)
+                {
+                    tatStatus = "Due Today";
+                }
+                else if (daysLeft <= 2)
+                {
+                    tatStatus =
+                        $"Due in {daysLeft} day(s)";
+                }
+                else
+                {
+                    tatStatus = "Within TAT";
+                }
+
+                return new AuthorizationTatResponse
+                {
+                    AuthId = x.AuthId,
+
+                    PayerName = x.PayerName,
+
+                    Priority = x.Priority,
+
+                    SubmittedAt = x.SubmittedAt,
+
+                    TatDays = x.TatDays,
+
+                    ExpectedReviewDate =
+                        expectedReviewDate,
+
+                    DaysLeft = daysLeft,
+
+                    TatStatus = tatStatus
+                };
+            })
+            .OrderBy(x => x.DaysLeft)
+            .ToList();
+
+        return result;
+    }
 }
