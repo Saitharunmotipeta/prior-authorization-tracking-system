@@ -7,6 +7,17 @@ import {
   useAuthorizationStore
 } from "../../stores/authorization.store";
 
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
+const goToSummary =
+  () => {
+    router.push(
+      "/specialist/authorization-summary"
+    );
+  };
+
 const authorizationStore =
   useAuthorizationStore();
 
@@ -119,6 +130,13 @@ const addService =
 
         <hr />
       </div>
+      <button
+  @click="
+    goToSummary()
+  "
+>
+  Review Authorization
+</button>
 
     </div>
 
