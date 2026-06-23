@@ -9,9 +9,9 @@ public enum RequestStatus : byte
     Submitted = 4,
     UnderReview = 5,
     AdditionalInfoRequired = 6,
-    ReSubmitted = 7,
+    ReSubmitted = 8,
 
-    Approved = 8,
+    Approved = 7,
     Denied = 9,
     Expired = 10
 }

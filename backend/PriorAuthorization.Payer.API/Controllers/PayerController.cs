@@ -102,7 +102,7 @@ namespace PriorAuthorization.Payer.API.Controllers
 
 
 
-        [HttpGet]
+        [HttpGet("Remainders")]
         public async Task<IActionResult> GetReminders()
         {
             var result =
@@ -115,6 +115,21 @@ namespace PriorAuthorization.Payer.API.Controllers
                         result,
                         "Reminders fetched successfully."));
         }
+
+
+
+        [HttpGet("audit-history")]
+        public async Task<IActionResult> GetAuditHistory()
+        {
+            var result = await _payerService.GetPayerAuditHistory();
+
+            if (result == null || !result.Any())
+                return NoContent();
+
+            return Ok(ApiResponse<List<AuditHistoryDto>>
+                .SuccessResponse(result, "Audit history fetched successfully"));
+        }
+
 
 
     }
