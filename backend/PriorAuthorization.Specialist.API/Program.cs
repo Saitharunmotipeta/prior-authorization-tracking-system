@@ -62,6 +62,7 @@ builder.Services.AddCors(options =>
         });
 });
 
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Basic Health Checks
 
@@ -114,20 +115,22 @@ app.MapGet("/health/database", async (ApplicationDbContext context) =>
     }
 });
 
-try
-{
-    Log.Information(
-        "Application Started");
+//try
+//{
+//    Log.Information(
+//        "Application Started");
 
-    app.Run();
-}
-catch (Exception ex)
-{
-    Log.Fatal(
-        ex,
-        "Application Failed To Start");
-}
-finally
-{
-    Log.CloseAndFlush();
-}
+//    app.Run();
+//}
+//catch (Exception ex)
+//{
+//    Log.Fatal(
+//        ex,
+//        "Application Failed To Start");
+//}
+//finally
+//{
+//    Log.CloseAndFlush();
+//}
+
+app.Run();

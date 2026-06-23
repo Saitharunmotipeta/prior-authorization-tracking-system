@@ -12,5 +12,7 @@ namespace PriorAuthorization.Payer.API.Services.Interfaces
         Task<ReminderListResponseDto> GetReminders();
 
 
+        Task<List<AuditHistoryDto>> GetPayerAuditHistory();
     }
+       
 }
