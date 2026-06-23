@@ -21,6 +21,7 @@ public class PatientLookupService : IPatientLookupService
             .Select(p => new PatientLookupDto
             {
                 MrnNumber = p.MrnNumber,
+                PatientId = p.PatientId,
                 PatientName = p.FullName, 
                 Age = p.Age
             })

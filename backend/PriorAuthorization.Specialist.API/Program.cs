@@ -49,6 +49,19 @@ builder.Services.AddScoped<IAuthorizationService,AuthorizationRequestService>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
 
 builder.Services.AddModelValidationConfiguration();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy",
+        policy =>
+        {
+            policy
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+});
+
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Basic Health Checks
@@ -66,9 +79,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("FrontendPolicy");
 
 app.UseAuthorization();
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
 
 app.MapControllers();
 
