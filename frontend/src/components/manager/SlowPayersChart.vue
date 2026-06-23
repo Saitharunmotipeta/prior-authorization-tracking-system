@@ -68,6 +68,17 @@ const chartOptions = {
     legend: {
       display: false
     }
+  },
+
+  scales: {
+    y: {
+      beginAtZero: true,
+
+      title: {
+        display: true,
+        text: "Average Response Days"
+      }
+    }
   }
 };
 </script>

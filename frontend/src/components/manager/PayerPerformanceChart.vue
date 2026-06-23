@@ -61,16 +61,27 @@ const chartOptions = {
     },
 
     title: {
-      display: true,
-      text: "Payer Performance"
+      display: false
     }
   },
 
   scales: {
+    x: {
+      ticks: {
+        maxRotation: 45,
+        minRotation: 0
+      }
+    },
+
     y: {
       beginAtZero: true,
 
-      max: 100
+      max: 100,
+
+      title: {
+        display: true,
+        text: "Approval Rate (%)"
+      }
     }
   }
 };
@@ -78,16 +89,17 @@ const chartOptions = {
 
 <template>
   <div class="chart-card">
+    <div class="chart-header">
+      <h3>Payer Approval Performance</h3>
+      <p>Approval Rate (%)</p>
+    </div>
 
     <div class="chart-wrapper">
-
       <Bar
         :data="chartData"
         :options="chartOptions"
       />
-
     </div>
-
   </div>
 </template>
 
@@ -100,6 +112,28 @@ const chartOptions = {
   border-radius: 12px;
 
   padding: 20px;
+}
+
+.chart-header {
+  margin-bottom: 16px;
+}
+
+.chart-header h3 {
+  margin: 0;
+
+  font-size: 18px;
+
+  font-weight: 600;
+
+  color: #111827;
+}
+
+.chart-header p {
+  margin-top: 4px;
+
+  font-size: 13px;
+
+  color: #6b7280;
 }
 
 .chart-wrapper {
