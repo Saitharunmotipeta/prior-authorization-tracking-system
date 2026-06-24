@@ -53,6 +53,14 @@ defineProps<Props>();
   border: 1px solid #e5e7eb;
 }
 
+.table-card h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -61,7 +69,20 @@ table {
 th,
 td {
   padding: 12px;
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+  font-weight: 600;
+  color: #374151;
+}
+
+td {
+  color: #111827;
+}
+
+tbody tr:hover {
+  background: #f9fafb;
 }
 </style>

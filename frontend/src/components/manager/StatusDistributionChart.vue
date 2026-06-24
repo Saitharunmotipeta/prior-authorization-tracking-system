@@ -68,9 +68,9 @@ const chartOptions = {
 <template>
   <div class="chart-card">
 
-    <h3>
-      Authorization Status Distribution
-    </h3>
+  <h3 style="text-align: center;">
+    Authorization Status Distribution
+  </h3>
 
     <div class="chart-wrapper">
       <Doughnut
