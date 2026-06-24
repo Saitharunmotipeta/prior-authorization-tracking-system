@@ -1,10 +1,33 @@
 <script setup lang="ts">
 import { ref } from "vue";
+
 import { useRouter } from "vue-router";
+
 import { storeToRefs } from "pinia";
 
-import { useSpecialistStore } from "../../stores/specialist.store";
-import { useEncounterStore } from "../../stores/encounter.store";
+import {
+  User,
+  Building2,
+  ClipboardPlus
+} from "lucide-vue-next";
+
+import AppError
+from "../../components/common/AppError.vue";
+
+import AppStatusBadge
+from "../../components/common/AppStatusBadge.vue";
+
+import {
+  useSpecialistStore
+} from "../../stores/specialist.store";
+
+import {
+  useEncounterStore
+} from "../../stores/encounter.store";
+
+import {
+  useAuthorizationStore
+} from "../../stores/authorization.store";
 
 const router = useRouter();
 
@@ -14,13 +37,25 @@ const specialistStore =
 const encounterStore =
   useEncounterStore();
 
+const authorizationStore =
+  useAuthorizationStore();
+
 const {
   patientLookup,
   selectedFacilityId,
-  selectedDepartmentId
-} = storeToRefs(
-  specialistStore
-);
+  selectedDepartmentId,
+  error
+} =
+  storeToRefs(
+    specialistStore
+  );
+
+const {
+  requestStatus
+} =
+  storeToRefs(
+    authorizationStore
+  );
 
 const conditionType =
   ref(0);
@@ -48,14 +83,14 @@ const createEncounter =
         });
 
       router.push({
-  path:
-    "/specialist/document-verification",
+        path:
+          "/specialist/document-verification",
 
-  query: {
-    encounterId:
-      encounterStore.encounterId
-  }
-});
+        query: {
+          encounterId:
+            encounterStore.encounterId
+        }
+      });
     }
     catch (error) {
       console.error(error);
@@ -66,63 +101,135 @@ const createEncounter =
 <template>
   <div class="page">
 
-    <h1 class="page-title">
-      Create Encounter
-    </h1>
+    <div class="page-header">
+
+      <div>
+
+        <h1>
+          Create Encounter
+        </h1>
+
+        <p class="subtitle">
+          Create a patient encounter
+          before authorization.
+        </p>
+
+      </div>
+
+      <AppStatusBadge
+        :status="requestStatus"
+      />
+
+    </div>
+
+    <AppError
+      :message="error"
+    />
 
     <div class="card">
 
-      <h2>
-        Patient Information
-      </h2>
+      <div class="card-title">
+
+        <User :size="20" />
+
+        <span>
+          Patient Information
+        </span>
+
+      </div>
 
       <div
         v-if="patientLookup"
         class="patient-grid"
       >
-        <div>
-          <strong>Name</strong>
+
+        <div
+          class="info-item"
+        >
+          <label>
+            Patient Name
+          </label>
+
           <p>
-            {{ patientLookup.patientName }}
+            {{
+              patientLookup.patientName
+            }}
           </p>
         </div>
 
-        <div>
-          <strong>MRN Number</strong>
+        <div
+          class="info-item"
+        >
+          <label>
+            MRN Number
+          </label>
+
           <p>
-            {{ patientLookup.mrnNumber }}
+            {{
+              patientLookup.mrnNumber
+            }}
           </p>
         </div>
 
-        <div>
-          <strong>Age</strong>
+        <div
+          class="info-item"
+        >
+          <label>
+            Age
+          </label>
+
           <p>
-            {{ patientLookup.age }}
+            {{
+              patientLookup.age
+            }}
           </p>
         </div>
 
-        <div>
-          <strong>Facility Id</strong>
+        <div
+          class="info-item"
+        >
+          <label>
+            Facility Id
+          </label>
+
           <p>
-            {{ selectedFacilityId }}
+            {{
+              selectedFacilityId
+            }}
           </p>
         </div>
 
-        <div>
-          <strong>Department Id</strong>
+        <div
+          class="info-item"
+        >
+          <label>
+            Department Id
+          </label>
+
           <p>
-            {{ selectedDepartmentId }}
+            {{
+              selectedDepartmentId
+            }}
           </p>
         </div>
+
       </div>
 
     </div>
 
     <div class="card">
 
-      <h2>
-        Encounter Details
-      </h2>
+      <div class="card-title">
+
+        <ClipboardPlus
+          :size="20"
+        />
+
+        <span>
+          Encounter Details
+        </span>
+
+      </div>
 
       <div class="field">
 
@@ -131,19 +238,29 @@ const createEncounter =
         </label>
 
         <select
-          v-model="conditionType"
+          v-model="
+            conditionType
+          "
         >
-          <option :value="0">
+
+          <option
+            :value="0"
+          >
             Elective
           </option>
 
-          <option :value="1">
+          <option
+            :value="1"
+          >
             Urgent
           </option>
 
-          <option :value="2">
+          <option
+            :value="2"
+          >
             Emergency
           </option>
+
         </select>
 
       </div>
@@ -171,8 +288,21 @@ const createEncounter =
   min-height: 100vh;
 }
 
-.page-title {
+.page-header {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  align-items: center;
+
   margin-bottom: 24px;
+}
+
+.subtitle {
+  color: #64748b;
+
+  margin-top: 6px;
 }
 
 .card {
@@ -185,6 +315,24 @@ const createEncounter =
   padding: 24px;
 
   margin-bottom: 24px;
+
+  box-shadow:
+    0 1px 3px
+    rgb(0 0 0 / 8%);
+}
+
+.card-title {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-bottom: 20px;
+
+  font-weight: 600;
+
+  font-size: 16px;
 }
 
 .patient-grid {
@@ -196,6 +344,32 @@ const createEncounter =
   gap: 20px;
 }
 
+.info-item {
+  background: #f8fafc;
+
+  padding: 12px;
+
+  border-radius: 8px;
+
+  border: 1px solid #e5e7eb;
+}
+
+.info-item label {
+  display: block;
+
+  font-size: 12px;
+
+  color: #64748b;
+
+  margin-bottom: 4px;
+}
+
+.info-item p {
+  margin: 0;
+
+  font-weight: 500;
+}
+
 .field {
   display: flex;
 
@@ -205,7 +379,7 @@ const createEncounter =
 }
 
 select {
-  padding: 10px;
+  padding: 12px;
 
   border: 1px solid #d1d5db;
 
@@ -226,5 +400,11 @@ select {
   color: white;
 
   cursor: pointer;
+
+  font-weight: 600;
+}
+
+.primary-button:hover {
+  opacity: 0.95;
 }
 </style>

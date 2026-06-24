@@ -1,18 +1,23 @@
 import { defineStore } from "pinia";
 
-import type {
-  CreateEncounterRequest,
-  CreateEncounterResponse
-} from "../types/encounter.interface";
-
 import {
   createEncounter
 } from "../api/specialist.api";
+
+import {
+  getErrorMessage
+} from "../utils/error-handler";
+
+import type {
+  CreateEncounterRequest
+} from "../types/encounter.interface";
 
 export const useEncounterStore =
   defineStore(
     "encounter",
     {
+      persist: true,
+
       state: () => ({
         encounterId:
           null as number | null,
@@ -49,13 +54,17 @@ export const useEncounterStore =
             console.error(error);
 
             this.error =
-              "Failed to create encounter";
+              getErrorMessage(error);
 
             throw error;
           }
           finally {
             this.loading = false;
           }
+        },
+
+        clearError() {
+          this.error = null;
         },
 
         resetEncounter() {

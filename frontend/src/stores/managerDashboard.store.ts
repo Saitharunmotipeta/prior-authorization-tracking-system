@@ -1,5 +1,9 @@
 import { defineStore } from "pinia";
 
+import {
+  getErrorMessage
+} from "../utils/error-handler";
+
 import type {
   DashboardMetrics,
   PayerPerformance,
@@ -26,6 +30,7 @@ interface ManagerDashboardState {
   selectedFacilityId: number | null;
 
   loading: boolean;
+
   error: string | null;
 
   dashboard: DashboardMetrics | null;
@@ -45,139 +50,210 @@ interface ManagerDashboardState {
   delayTrends: DelayTrend[];
 }
 
-export const useManagerDashboardStore = defineStore(
-  "managerDashboard",
-  {
-    state: (): ManagerDashboardState => ({
-      selectedFacilityId: null,
+export const useManagerDashboardStore =
+  defineStore(
+    "managerDashboard",
+    {
+      persist: true,
 
-      loading: false,
+      state:
+        (): ManagerDashboardState => ({
+          selectedFacilityId:
+            null,
 
-      error: null,
+          loading: false,
 
-      dashboard: null,
+          error: null,
 
-      payerPerformance: [],
+          dashboard: null,
 
-      slowPayers: [],
+          payerPerformance: [],
 
-      revenueAtRisk: null,
+          slowPayers: [],
 
-      facilityComparison: [],
+          revenueAtRisk: null,
 
-      topPerformingPayers: [],
+          facilityComparison: [],
 
-      poorPerformingPayers: [],
+          topPerformingPayers: [],
 
-      delayTrends: []
-    }),
+          poorPerformingPayers: [],
 
-    actions: {
-      async loadAllDashboardData(
-        facilityId?: number
-      ) {
-        try {
-          this.loading = true;
+          delayTrends: []
+        }),
 
+      actions: {
+        async loadAllDashboardData(
+          facilityId?: number
+        ) {
+          try {
+            this.loading = true;
+
+            this.error = null;
+
+            this.selectedFacilityId =
+              facilityId ?? null;
+
+            const [
+              dashboardResponse,
+
+              payerPerformanceResponse,
+
+              slowPayersResponse,
+
+              revenueAtRiskResponse,
+
+              facilityComparisonResponse,
+
+              topPerformingPayersResponse,
+
+              poorPerformingPayersResponse,
+
+              delayTrendsResponse
+            ] = await Promise.all([
+              getDashboard(
+                facilityId
+              ),
+
+              getPayerPerformance(
+                facilityId
+              ),
+
+              getSlowPayers(
+                facilityId
+              ),
+
+              getRevenueAtRisk(
+                facilityId
+              ),
+
+              getFacilityComparison(
+                facilityId
+              ),
+
+              getTopPerformingPayers(
+                facilityId
+              ),
+
+              getPoorPerformingPayers(
+                facilityId
+              ),
+
+              getDelayTrends(
+                facilityId
+              )
+            ]);
+
+            this.dashboard =
+              dashboardResponse.data;
+
+            this.payerPerformance =
+              payerPerformanceResponse.data;
+
+            this.slowPayers =
+              slowPayersResponse.data;
+
+            this.revenueAtRisk =
+              revenueAtRiskResponse.data;
+
+            this.facilityComparison =
+              facilityComparisonResponse.data;
+
+            this.topPerformingPayers =
+              topPerformingPayersResponse.data;
+
+            this.poorPerformingPayers =
+              poorPerformingPayersResponse.data;
+
+            this.delayTrends =
+              delayTrendsResponse.data;
+          }
+          catch (error) {
+            console.error(error);
+
+            this.error =
+              getErrorMessage(error);
+          }
+          finally {
+            this.loading = false;
+          }
+        },
+
+        async changeFacility(
+          facilityId?: number
+        ) {
+          await this
+            .loadAllDashboardData(
+              facilityId
+            );
+        },
+
+        clearError() {
           this.error = null;
+        },
 
+        resetDashboard() {
           this.selectedFacilityId =
-            facilityId ?? null;
-
-          const [
-            dashboardResponse,
-
-            payerPerformanceResponse,
-
-            slowPayersResponse,
-
-            revenueAtRiskResponse,
-
-            facilityComparisonResponse,
-
-            topPerformingPayersResponse,
-
-            poorPerformingPayersResponse,
-
-            delayTrendsResponse
-          ] = await Promise.all([
-            getDashboard(facilityId),
-
-            getPayerPerformance(facilityId),
-
-            getSlowPayers(facilityId),
-
-            getRevenueAtRisk(facilityId),
-
-            getFacilityComparison(facilityId),
-
-            getTopPerformingPayers(facilityId),
-
-            getPoorPerformingPayers(facilityId),
-
-            getDelayTrends(facilityId)
-          ]);
+            null;
 
           this.dashboard =
-            dashboardResponse.data;
+            null;
 
           this.payerPerformance =
-            payerPerformanceResponse.data;
+            [];
 
           this.slowPayers =
-            slowPayersResponse.data;
+            [];
 
           this.revenueAtRisk =
-            revenueAtRiskResponse.data;
+            null;
 
           this.facilityComparison =
-            facilityComparisonResponse.data;
+            [];
 
           this.topPerformingPayers =
-            topPerformingPayersResponse.data;
+            [];
 
           this.poorPerformingPayers =
-            poorPerformingPayersResponse.data;
+            [];
 
           this.delayTrends =
-            delayTrendsResponse.data;
-        } catch (error) {
-          console.error(error);
+            [];
 
-          this.error =
-            "Failed to load dashboard data";
-        } finally {
-          this.loading = false;
+          this.error = null;
         }
       },
 
-      async changeFacility(
-        facilityId?: number
-      ) {
-        await this.loadAllDashboardData(
-          facilityId
-        );
+      getters: {
+        approvalRate:
+          (state) =>
+            state.dashboard
+              ?.approvalRate ?? 0,
+
+        denialRate:
+          (state) =>
+            state.dashboard
+              ?.denialRate ?? 0,
+
+        approvedRevenue:
+          (state) =>
+            state.dashboard
+              ?.approvedRevenue ?? 0,
+
+        revenueAtRiskAmount:
+          (state) =>
+            state.revenueAtRisk
+              ?.revenueAtRisk ?? 0,
+
+        totalRequests:
+          (state) =>
+            state.dashboard
+              ?.totalAuthorizationRequests ?? 0,
+
+        pendingRequests:
+          (state) =>
+            state.dashboard
+              ?.pendingRequests ?? 0
       }
-    },
-
-    getters: {
-      approvalRate: (state) =>
-        state.dashboard?.approvalRate ?? 0,
-
-      denialRate: (state) =>
-        state.dashboard?.denialRate ?? 0,
-
-      approvedRevenue: (state) =>
-        state.dashboard?.approvedRevenue ?? 0,
-
-      revenueAtRiskAmount: (state) =>
-        state.revenueAtRisk?.revenueAtRisk ?? 0,
-
-      totalRequests: (state) =>
-        state.dashboard?.totalAuthorizationRequests ?? 0,
-
-      pendingRequests: (state) =>
-        state.dashboard?.pendingRequests ?? 0
     }
-  }
-);
+  );
