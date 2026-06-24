@@ -9,13 +9,28 @@ import {
   verifyEncounter
 } from "../api/specialist.api";
 
-import { useEncounterStore }
-from "./encounter.store";
+import {
+  getErrorMessage
+} from "../utils/error-handler";
+
+import {
+  useEncounterStore
+} from "./encounter.store";
+
+import {
+  RequestStatus
+} from "../enums/request-status.enum";
+
+import {
+  useAuthorizationStore
+} from "./authorization.store";
 
 export const useDocumentVerificationStore =
   defineStore(
     "documentVerification",
     {
+      persist: true,
+
       state: () => ({
         identificationVerified: false,
 
@@ -29,11 +44,13 @@ export const useDocumentVerificationStore =
 
         remarks: "",
 
-        verificationStatus: "Pending",
+        verificationStatus:
+          "Pending",
 
         loading: false,
 
-        error: null as string | null
+        error:
+          null as string | null
       }),
 
       actions: {
@@ -43,8 +60,12 @@ export const useDocumentVerificationStore =
 
           if (
             !encounterStore.encounterId
-          )
+          ) {
+            this.error =
+              "Encounter not found.";
+
             return;
+          }
 
           try {
             this.loading = true;
@@ -71,7 +92,10 @@ export const useDocumentVerificationStore =
               remarks:
                 this.remarks
             };
-            console.log(encounterStore.encounterId);
+
+            console.log(
+              encounterStore.encounterId
+            );
 
             await updateEncounter(
               encounterStore.encounterId,
@@ -82,7 +106,7 @@ export const useDocumentVerificationStore =
             console.error(error);
 
             this.error =
-              "Failed to save documents";
+              getErrorMessage(error);
           }
           finally {
             this.loading = false;
@@ -95,8 +119,12 @@ export const useDocumentVerificationStore =
 
           if (
             !encounterStore.encounterId
-          )
+          ) {
+            this.error =
+              "Encounter not found.";
+
             return;
+          }
 
           try {
             this.loading = true;
@@ -109,16 +137,50 @@ export const useDocumentVerificationStore =
 
             this.verificationStatus =
               "Verified";
+            
+            const authorizationStore =
+  useAuthorizationStore();
+
+authorizationStore.requestStatus =
+  RequestStatus.ReadyForSubmission;
           }
           catch (error) {
             console.error(error);
 
             this.error =
-              "Verification failed";
+              getErrorMessage(error);
           }
           finally {
             this.loading = false;
           }
+        },
+
+        clearError() {
+          this.error = null;
+        },
+
+        resetDocuments() {
+          this.identificationVerified =
+            false;
+
+          this.prescriptionVerified =
+            false;
+
+          this.scanVerified =
+            false;
+
+          this.doctorNotesVerified =
+            false;
+
+          this.insuranceCardVerified =
+            false;
+
+          this.remarks = "";
+
+          this.verificationStatus =
+            "Pending";
+
+          this.error = null;
         }
       }
     }

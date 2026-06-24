@@ -5,6 +5,14 @@ import {
   addAuthorizationService
 } from "../api/specialist.api";
 
+import {
+  getErrorMessage
+} from "../utils/error-handler";
+
+import {
+  RequestStatus
+} from "../enums/request-status.enum";
+
 import type {
   CreateAuthorizationRequest
 } from "../types/authorization.interface";
@@ -17,6 +25,8 @@ export const useAuthorizationStore =
   defineStore(
     "authorization",
     {
+      persist: true,
+
       state: () => ({
         authorizationRequestId:
           null as number | null,
@@ -24,6 +34,8 @@ export const useAuthorizationStore =
         payerId: 0,
 
         priority: 0,
+        requestStatus:
+            RequestStatus.Draft,
 
         services:
           [] as AddAuthorizationServiceRequest[],
@@ -58,7 +70,7 @@ export const useAuthorizationStore =
             console.error(error);
 
             this.error =
-              "Failed to create authorization request";
+              getErrorMessage(error);
 
             throw error;
           }
@@ -97,13 +109,17 @@ export const useAuthorizationStore =
             console.error(error);
 
             this.error =
-              "Failed to add service";
+              getErrorMessage(error);
 
             throw error;
           }
           finally {
             this.loading = false;
           }
+        },
+
+        clearError() {
+          this.error = null;
         },
 
         resetAuthorization() {

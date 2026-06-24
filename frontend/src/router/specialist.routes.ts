@@ -1,5 +1,8 @@
 import type { RouteRecordRaw } from "vue-router";
 
+import SpecialistLayout
+from "../layouts/SpecialistLayout.vue";
+
 import SpecialistDashboardPage
 from "../pages/specialist/SpecialistDashboardPage.vue";
 
@@ -12,7 +15,7 @@ from "../pages/specialist/CreateEncounterPage.vue";
 import DocumentVerificationPage
 from "../pages/specialist/DocumentVerificationPage.vue";
 
-import CreateAuthorizationRequestPage 
+import CreateAuthorizationRequestPage
 from "../pages/specialist/CreateAuthorizationRequestPage.vue";
 
 import AddAuthorizationServicesPage
@@ -21,52 +24,90 @@ from "../pages/specialist/AddAuthorizationServicesPage.vue";
 import AuthorizationSummaryPage
 from "../pages/specialist/AuthorizationSummaryPage.vue";
 
-export const specialistRoutes: RouteRecordRaw[] = [
+export const specialistRoutes:
+  RouteRecordRaw[] = [
   {
     path: "/specialist",
-    name: "SpecialistDashboard",
-    component: SpecialistDashboardPage
-  },
 
-  {
-    path: "/specialist/eligibility",
-    name: "EligibilityVerification",
-    component: EligibilityVerificationPage
-  },
+    component:
+      SpecialistLayout,
 
-  {
-    path: "/specialist/create-encounter",
-    name: "CreateEncounter",
-    component: CreateEncounterPage
-    },
+    children: [
+      {
+        path: "",
 
-    {
-  path: "/specialist/document-verification",
-  name: "DocumentVerification",
-  component: DocumentVerificationPage
-},
-{
-  path:
-    "/specialist/create-authorization",
-  name:
-    "CreateAuthorization",
-  component:
-    CreateAuthorizationRequestPage
-},
-{
-  path:
-    "/specialist/add-services",
-  name:
-    "AddAuthorizationServices",
-  component:
-    AddAuthorizationServicesPage
-},
-{
-  path:
-    "/specialist/authorization-summary",
-  name:
-    "AuthorizationSummary",
-  component:
-    AuthorizationSummaryPage
-}
+        name:
+          "SpecialistDashboard",
+
+        component:
+          SpecialistDashboardPage
+      },
+
+      {
+        path:
+          "eligibility",
+
+        name:
+          "EligibilityVerification",
+
+        component:
+          EligibilityVerificationPage
+      },
+
+      {
+        path:
+          "create-encounter",
+
+        name:
+          "CreateEncounter",
+
+        component:
+          CreateEncounterPage
+      },
+
+      {
+        path:
+          "document-verification",
+
+        name:
+          "DocumentVerification",
+
+        component:
+          DocumentVerificationPage
+      },
+
+      {
+        path:
+          "create-authorization",
+
+        name:
+          "CreateAuthorization",
+
+        component:
+          CreateAuthorizationRequestPage
+      },
+
+      {
+        path:
+          "add-services",
+
+        name:
+          "AddAuthorizationServices",
+
+        component:
+          AddAuthorizationServicesPage
+      },
+
+      {
+        path:
+          "authorization-summary",
+
+        name:
+          "AuthorizationSummary",
+
+        component:
+          AuthorizationSummaryPage
+      }
+    ]
+  }
 ];
