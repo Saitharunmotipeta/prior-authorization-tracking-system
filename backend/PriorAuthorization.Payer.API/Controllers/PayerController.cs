@@ -129,8 +129,13 @@ namespace PriorAuthorization.Payer.API.Controllers
             return Ok(ApiResponse<List<AuditHistoryDto>>
                 .SuccessResponse(result, "Audit history fetched successfully"));
         }
+        [HttpGet]
+        public async Task<ActionResult<List<PayerDetailsDto>>> GetPayers()
+        {
+            var payers = await _payerService.GetPayersAsync();
 
-
-
+            return Ok(payers);
+        }
     }
+
 }
