@@ -2,8 +2,6 @@
 
 public class UpdateEncounterDto
 {
-    public byte? VerificationStatus { get; set; }
-
     public bool? IdentificationVerified { get; set; }
 
     public bool? PrescriptionVerified { get; set; }

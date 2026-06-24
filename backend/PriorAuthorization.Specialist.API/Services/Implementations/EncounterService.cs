@@ -118,17 +118,6 @@ public class EncounterService : IEncounterService
         var oldValues = new Dictionary<string, object?>();
         var newValues = new Dictionary<string, object?>();
 
-        if (dto.VerificationStatus.HasValue)
-        {
-            oldValues["verificationStatus"] = encounter.VerificationStatus;
-
-            encounter.VerificationStatus =
-                dto.VerificationStatus.Value;
-
-            newValues["verificationStatus"] =
-                encounter.VerificationStatus;
-        }
-
         if (dto.IdentificationVerified.HasValue)
         {
             oldValues["identificationVerified"] =
