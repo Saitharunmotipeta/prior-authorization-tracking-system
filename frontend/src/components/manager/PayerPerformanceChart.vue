@@ -90,8 +90,9 @@ const chartOptions = {
 <template>
   <div class="chart-card">
     <div class="chart-header">
-      <h3>Payer Approval Performance</h3>
-      <p>Approval Rate (%)</p>
+    <h3 style="text-align: center;">
+      Payer Approval Performance
+    </h3>
     </div>
 
     <div class="chart-wrapper">
