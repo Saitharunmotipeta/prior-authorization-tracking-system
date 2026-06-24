@@ -551,38 +551,38 @@ public class PayerService : IPayerService
         return result;
     }
 
-    public async Task<ReminderListResponseDto> GetReminders()
+    public async Task<ReminderListResponseDto> GetReminders(
+    )
     {
         var stopwatch =
             StopwatchUtility.Start();
 
         _logger.LogInformation(
-            "GetReminders started");
+            "GetReminders started. PayerId: {PayerId}",
+            1);
 
-        var reminders = await _context.Reminders
-    .Where(a => a.PayerId == 1)
-    .AsNoTracking()
-    .OrderBy(r => r.Status)
-    .ThenByDescending(r => r.ScheduledAt)
-    .ToListAsync();
-
+        var reminders =
+            await _context.Reminders
+                .Where(r =>
+                    r.PayerId == 1 &&
+                    r.Status ==
+                    (byte)ReminderStatus.Pending)
+                .AsNoTracking()
+                .OrderByDescending(r =>
+                    r.ScheduledAt)
+                .ToListAsync();
 
         if (!reminders.Any())
         {
             _logger.LogWarning(
-                "No reminders found");
+                "No pending reminders found");
 
             throw new NotFoundException(
-                "No reminders found.");
+                "No pending reminders found.");
         }
 
         var pendingCount =
-            reminders.Count(r =>
-                r.Status ==
-                (byte)ReminderStatus.Requested ||
-
-                r.Status ==
-                (byte)ReminderStatus.Scheduled);
+            reminders.Count;
 
         var data =
             reminders
@@ -597,11 +597,11 @@ public class PayerService : IPayerService
 
                         Category =
                             ((ReminderCategory)r.Category)
-                            .ToString(),
+                                .ToString(),
 
                         Status =
                             ((ReminderStatus)r.Status)
-                            .ToString(),
+                                .ToString(),
 
                         ScheduledAt =
                             r.ScheduledAt,
@@ -632,9 +632,9 @@ public class PayerService : IPayerService
                 stopwatch);
 
         _logger.LogInformation(
-            "GetReminders completed in {ElapsedMs} ms. Total Reminders: {TotalCount}, Pending Reminders: {PendingCount}",
+            "GetReminders completed in {ElapsedMs} ms. , Pending Reminders: {PendingCount}",
             elapsedMs,
-            data.Count,
+            
             pendingCount);
 
         return result;

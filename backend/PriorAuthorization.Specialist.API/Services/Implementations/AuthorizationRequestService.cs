@@ -572,4 +572,105 @@ public class AuthorizationRequestService : IAuthorizationService
 
         return result;
     }
+    public async Task<List<AuthorizationListItemDto>>
+    GetAuthorizationsAsync(
+        RequestStatus? status)
+    {
+        var query =
+            _context.AuthorizationRequests
+                .AsNoTracking()
+                .Include(a => a.Payer)
+                .Include(a => a.Encounter)
+                    .ThenInclude(e => e.Patient)
+                .AsQueryable();
+
+        if (status.HasValue)
+        {
+            query =
+                query.Where(a =>
+                    a.Status ==
+                    (byte)status.Value);
+        }
+
+        return await query
+            .OrderByDescending(a =>
+                a.CreatedAt)
+            .Select(a =>
+                new AuthorizationListItemDto
+                {
+                    AuthId =
+                        a.AuthId,
+
+                    PatientName =
+                        a.Encounter.Patient.FullName,
+
+                    PayerName =
+                        a.Payer.PayerName,
+
+                    Status =
+                        ((RequestStatus)a.Status)
+                            .ToString(),
+
+                    Priority =
+                        ((Priority)a.Priority)
+                            .ToString(),
+
+                    EstimatedAmount =
+                        a.EstimatedTotalAmount,
+
+                    CreatedAt =
+                        a.CreatedAt,
+
+                    SubmittedAt =
+                        a.SubmittedAt
+                })
+            .ToListAsync();
+    }
+    public async Task<List<AuthorizationListItemDto>>
+    GetAwaitingReviewAuthorizationsAsync()
+    {
+        return await _context.AuthorizationRequests
+            .AsNoTracking()
+            .Include(a => a.Payer)
+            .Include(a => a.Encounter)
+                .ThenInclude(e => e.Patient)
+            .Where(a =>
+                a.Status ==
+                    (byte)RequestStatus.Submitted
+                ||
+                a.Status ==
+                    (byte)RequestStatus.ReSubmitted)
+            .OrderByDescending(a =>
+                a.SubmittedAt)
+            .Select(a =>
+                new AuthorizationListItemDto
+                {
+                    AuthId =
+                        a.AuthId,
+
+                    PatientName =
+                        a.Encounter.Patient.FullName,
+
+                    PayerName =
+                        a.Payer.PayerName,
+
+                    Status =
+                        ((RequestStatus)a.Status)
+                            .ToString(),
+
+                    Priority =
+                        ((Priority)a.Priority)
+                            .ToString(),
+
+                    EstimatedAmount =
+                        a.EstimatedTotalAmount,
+
+                    CreatedAt =
+                        a.CreatedAt,
+
+                    SubmittedAt =
+                        a.SubmittedAt
+                })
+            .ToListAsync();
+    }
 }
