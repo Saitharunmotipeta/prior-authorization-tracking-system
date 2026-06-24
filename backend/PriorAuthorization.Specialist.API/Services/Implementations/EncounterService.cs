@@ -118,17 +118,6 @@ public class EncounterService : IEncounterService
         var oldValues = new Dictionary<string, object?>();
         var newValues = new Dictionary<string, object?>();
 
-        if (dto.VerificationStatus.HasValue)
-        {
-            oldValues["verificationStatus"] = encounter.VerificationStatus;
-
-            encounter.VerificationStatus =
-                dto.VerificationStatus.Value;
-
-            newValues["verificationStatus"] =
-                encounter.VerificationStatus;
-        }
-
         if (dto.IdentificationVerified.HasValue)
         {
             oldValues["identificationVerified"] =
@@ -328,6 +317,76 @@ public async Task VerifyEncounterAsync(
 
             Remarks =
                 "Encounter verified",
+
+            CreatedAt =
+                DateTime.UtcNow
+        };
+
+    _context.AuditHistories.Add(audit);
+
+    await _context.SaveChangesAsync();
+}
+    public async Task SubmitAuthorizationRequestAsync(
+    int authId)
+{
+    var authorization =
+        await _context.AuthorizationRequests
+            .FirstOrDefaultAsync(a =>
+                a.AuthId == authId);
+
+    if (authorization == null)
+    {
+        throw new NotFoundException(
+            $"Authorization Request {authId} not found.");
+    }
+
+    if (authorization.Status !=
+        (byte)RequestStatus.Draft)
+    {
+        throw new ConflictException(
+            "Only draft authorization requests can be submitted.");
+    }
+
+    var servicesExist =
+        await _context.AuthorizationServices
+            .AnyAsync(s =>
+                s.AuthId == authId);
+
+    if (!servicesExist)
+    {
+        throw new BadRequestException(
+            "At least one service must be attached before submission.");
+    }
+
+    authorization.Status =
+        (byte)RequestStatus.Submitted;
+
+    authorization.SubmittedAt =
+        DateTime.UtcNow;
+
+    authorization.UpdatedAt =
+        DateTime.UtcNow;
+
+    var audit =
+        new AuditHistory
+        {
+            AuthId =
+                authorization.AuthId,
+
+            EncounterId =
+                authorization.EncounterId,
+
+            EntityId =
+                $"Authorization-{authorization.AuthId}",
+
+            ActionType =
+                (byte)AuditActionType.Updated,
+
+            PerformedByRole =
+                (byte)UserRole.Specialist,
+
+            Remarks =
+                "Authorization request submitted",
 
             CreatedAt =
                 DateTime.UtcNow

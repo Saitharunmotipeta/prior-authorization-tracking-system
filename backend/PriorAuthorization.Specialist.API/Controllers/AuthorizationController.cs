@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PriorAuthorization.Shared.Common;
+using PriorAuthorization.Shared.Entities;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 
@@ -29,5 +30,104 @@ public class AuthorizationController : ControllerBase
             ApiResponse<int>.SuccessResponse(
                 authId,
                 "Authorization request created successfully."));
+    }
+
+    [HttpPost("{authId}/services")]
+    public async Task<IActionResult> AddService(
+        int authId,
+        AddAuthorizationServiceDto dto)
+    {
+        await _authorizationService
+            .AddServiceAsync(authId, dto);
+
+        return Ok(
+            ApiResponse<string>.SuccessResponse(
+                string.Empty,
+                "Service added successfully."));
+    }
+
+    [HttpDelete("{authId}/services/{serviceId}")]
+    public async Task<IActionResult> RemoveService(
+        int authId,
+        int serviceId)
+    {
+        await _authorizationService
+            .RemoveServiceAsync(
+                authId,
+                serviceId);
+
+        return Ok(
+            ApiResponse<string>.SuccessResponse(
+                string.Empty,
+                "Service removed successfully."));
+    }
+
+    [HttpGet("{authId}/services")]
+    public async Task<IActionResult> GetServices(
+        int authId)
+    {
+        var services =
+            await _authorizationService
+                .GetServicesAsync(authId);
+
+        return Ok(
+     ApiResponse<List<AuthorizationServiceResponseDto>>
+         .SuccessResponse(
+             services,
+             "Services retrieved successfully."));
+    }
+
+    [HttpPatch("{authId}/submit")]
+    public async Task<IActionResult> SubmitAuthorizationRequest(
+        int authId)
+    {
+        await _authorizationService
+            .SubmitAuthorizationRequestAsync(authId);
+
+        return Ok(
+            ApiResponse<string>.SuccessResponse(
+                string.Empty,
+                "Authorization request submitted successfully."));
+    }
+    [HttpPatch("{authId}/resubmit")]
+    public async Task<IActionResult> ResubmitAuthorization(
+    int authId,
+    ResubmitAuthorizationDto dto)
+    {
+        await _authorizationService
+            .ResubmitAuthorizationAsync(
+                authId,
+                dto);
+
+        return Ok(
+            ApiResponse<string>.SuccessResponse(
+                string.Empty,
+                "Authorization request resubmitted successfully."));
+    }
+    [HttpGet("{authId}/timeline")]
+    public async Task<IActionResult> GetTimeline(
+    int authId)
+    {
+        var timeline =
+            await _authorizationService
+                .GetTimelineAsync(authId);
+
+        return Ok(
+            ApiResponse<List<AuthorizationTimelineDto>>
+                .SuccessResponse(
+                    timeline,
+                    "Timeline retrieved successfully."));
+    }
+    [HttpGet("tat-priority")]
+    public async Task<IActionResult>
+        GetTatPriorityQueue(
+            [FromQuery] int facilityId)
+    {
+        var result =
+            await _authorizationService
+                .GetTatPriorityQueueAsync(
+                    facilityId);
+
+        return Ok(result);
     }
 }

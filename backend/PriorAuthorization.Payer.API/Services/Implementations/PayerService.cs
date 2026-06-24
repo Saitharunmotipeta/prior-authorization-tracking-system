@@ -22,6 +22,13 @@ public class PayerService : IPayerService
         _logger = logger;
     }
 
+    private static readonly byte[] PendingStatuses =
+{
+    (byte)RequestStatus.Submitted,
+    (byte)RequestStatus.ReSubmitted
+    //(byte)RequestStatus.AdditionalInfoRequired
+};
+
 
     public async Task<List<FacilityDto>> GetFacilities()
     {
@@ -46,16 +53,13 @@ public class PayerService : IPayerService
                         _context.AuthorizationRequests
                             .Count(a =>
                                 a.Encounter.FacilityId ==
-                                f.FacilityId &&
+                                f.FacilityId && a.PayerId==1 && 
                                 (
                                     a.Status ==
                                     (byte)RequestStatus.Submitted ||
 
                                     a.Status ==
-                                    (byte)RequestStatus.UnderReview ||
-
-                                    a.Status ==
-                                    (byte)RequestStatus.AdditionalInfoRequired
+                                    (byte)RequestStatus.ReSubmitted
                                 ))
                 })
                 .ToListAsync();
@@ -120,49 +124,36 @@ public class PayerService : IPayerService
         }
 
         var result =
-            await _context.AuthorizationRequests
-                .AsNoTracking()
-                .Include(a => a.Encounter)
-                    .ThenInclude(e => e.Patient)
-                .Include(a => a.Encounter.Facility)
-                .Where(a =>
-                    a.Encounter.FacilityId ==
-                    facilityId &&
-                    (
-                        a.Status ==
-                        (byte)RequestStatus.Submitted ||
+      await _context.AuthorizationRequests
+          .AsNoTracking()
+          .Include(a => a.Encounter)
+              .ThenInclude(e => e.Patient)
+          .Include(a => a.Encounter.Facility)
+          .Where(a =>
+              a.Encounter.FacilityId == facilityId &&
+              a.PayerId == 1 &&
+              PendingStatuses.Contains(a.Status))
+          .Select(a => new
+          {
+              Data = new RequestLists
+              {
+                  AuthId = a.AuthId,
+                  EncounterId = a.EncounterId,
+                  PatientName = a.Encounter.Patient.FullName,
+                  FacilityName = a.Encounter.Facility.FacilityName,
+                  ConditionType = a.Encounter.ConditionType.ToString(),
+                  Priority = a.Priority.ToString(),
+                  Status = a.Status.ToString(),
+                  EstimatedAmount = a.EstimatedTotalAmount,
+                  SubmittedAt = a.SubmittedAt
+              },
 
-                        a.Status ==
-                        (byte)RequestStatus.UnderReview ||
-
-                        a.Status ==
-                        (byte)RequestStatus.AdditionalInfoRequired
-                    ))
-                .Select(a => new
-                {
-                    Data = new RequestLists
-                    {
-                        AuthId = a.AuthId,
-                        EncounterId = a.EncounterId,
-                        PatientName = a.Encounter.Patient.FullName,
-                        FacilityName = a.Encounter.Facility.FacilityName,
-                        ConditionType = a.Encounter.ConditionType.ToString(),
-                        Priority = a.Priority.ToString(),
-                        Status = a.Status.ToString(),
-                        EstimatedAmount = a.EstimatedTotalAmount,
-                        SubmittedAt = a.SubmittedAt
-                    },
-
-                    ConditionOrder =
-                        a.Encounter.ConditionType
-                })
-                .OrderByDescending(x =>
-                    x.ConditionOrder)
-                .ThenByDescending(x =>
-                    x.Data.SubmittedAt)
-                .Select(x =>
-                    x.Data)
-                .ToListAsync();
+              ConditionOrder = a.Encounter.ConditionType
+          })
+          .OrderByDescending(x => x.ConditionOrder)
+          .ThenByDescending(x => x.Data.SubmittedAt)
+          .Select(x => x.Data)
+          .ToListAsync();
 
         if (!result.Any())
         {
@@ -358,9 +349,13 @@ public class PayerService : IPayerService
         }
 
         var auth =
-            await _context.AuthorizationRequests
-                .FirstOrDefaultAsync(x =>
-                    x.AuthId == authId);
+     await _context.AuthorizationRequests
+         .FirstOrDefaultAsync(x =>
+             x.AuthId == authId &&
+             (
+                 x.Status == (byte)RequestStatus.Submitted ||
+                 x.Status == (byte)RequestStatus.ReSubmitted
+             ));
 
         if (auth == null)
         {
@@ -508,56 +503,29 @@ public class PayerService : IPayerService
             "GetEmergencyRequests started");
 
         var result =
-            await _context.AuthorizationRequests
-                .AsNoTracking()
-                .Include(a => a.Encounter)
-                    .ThenInclude(e => e.Patient)
-                .Include(a => a.Encounter.Facility)
-                .Where(a =>
-                    a.Encounter.ConditionType ==
-                    (byte)ConditionType.Emergency &&
-                    (
-                        a.Status ==
-                        (byte)RequestStatus.Submitted ||
-
-                        a.Status ==
-                        (byte)RequestStatus.UnderReview ||
-
-                        a.Status ==
-                        (byte)RequestStatus.AdditionalInfoRequired
-                    ))
-                .Select(a => new RequestLists
-                {
-                    AuthId =
-                        a.AuthId,
-
-                    EncounterId =
-                        a.EncounterId,
-
-                    PatientName =
-                        a.Encounter.Patient.FullName,
-
-                    FacilityName =
-                        a.Encounter.Facility.FacilityName,
-
-                    ConditionType =
-                        a.Encounter.ConditionType.ToString(),
-
-                    Priority =
-                        a.Priority.ToString(),
-
-                    Status =
-                        a.Status.ToString(),
-
-                    EstimatedAmount =
-                        a.EstimatedTotalAmount,
-
-                    SubmittedAt =
-                        a.SubmittedAt
-                })
-                .OrderByDescending(x =>
-                    x.SubmittedAt)
-                .ToListAsync();
+    await _context.AuthorizationRequests
+        .AsNoTracking()
+        .Include(a => a.Encounter)
+            .ThenInclude(e => e.Patient)
+        .Include(a => a.Encounter.Facility)
+        .Where(a =>
+            a.Encounter.ConditionType == (byte)ConditionType.Emergency &&
+            a.PayerId==1 && 
+            PendingStatuses.Contains(a.Status))
+        .Select(a => new RequestLists
+        {
+            AuthId = a.AuthId,
+            EncounterId = a.EncounterId,
+            PatientName = a.Encounter.Patient.FullName,
+            FacilityName = a.Encounter.Facility.FacilityName,
+            ConditionType = a.Encounter.ConditionType.ToString(),
+            Priority = a.Priority.ToString(),
+            Status = a.Status.ToString(),
+            EstimatedAmount = a.EstimatedTotalAmount,
+            SubmittedAt = a.SubmittedAt
+        })
+        .OrderByDescending(x => x.SubmittedAt)
+        .ToListAsync();
 
         if (!result.Any())
         {
@@ -588,14 +556,13 @@ public class PayerService : IPayerService
         _logger.LogInformation(
             "GetReminders started");
 
-        var reminders =
-            await _context.Reminders
-                .AsNoTracking()
-                .OrderBy(r =>
-                    r.Status)
-                .ThenByDescending(r =>
-                    r.ScheduledAt)
-                .ToListAsync();
+        var reminders = await _context.Reminders
+    .Where(a => a.PayerId == 1)
+    .AsNoTracking()
+    .OrderBy(r => r.Status)
+    .ThenByDescending(r => r.ScheduledAt)
+    .ToListAsync();
+
 
         if (!reminders.Any())
         {
@@ -670,4 +637,69 @@ public class PayerService : IPayerService
         return result;
     }
 
+
+    public async Task<List<AuditHistoryDto>> GetPayerAuditHistory()
+    {
+        _logger.LogInformation("Fetching payer audit history");
+
+        try
+        {
+            var result = await _context.AuditHistories
+                .AsNoTracking()
+
+                // ✅ Only payer actions
+                .Where(a =>
+                    a.PerformedByRole == (byte)UserRole.Payer &&
+
+                    (
+                        a.ActionType == (byte)AuditActionType.Approved ||
+                        a.ActionType == (byte)AuditActionType.Denied ||
+                        a.ActionType == (byte)AuditActionType.RequestedMoreInfo
+                    )
+                )
+
+                // ✅ Sort latest first
+                .OrderByDescending(a => a.CreatedAt)
+
+                // ✅ Projection
+                .Select(a => new AuditHistoryDto
+                {
+                    AuditId = a.AuditId,
+                    AuthId = a.AuthId,
+                    ActionType = ((AuditActionType)a.ActionType).ToString(),
+                    Remarks = a.Remarks,
+                    OldValue = a.OldValue,
+                    NewValue = a.NewValue,
+                    CreatedAt = a.CreatedAt
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("Fetched {Count} audit history records", result.Count);
+
+            return result;
+        }
+        catch (AppException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching audit history");
+
+            throw new InternalServerException("Failed to fetch audit history");
+        }
+    }
+    public async Task<List<PayerDetailsDto>> GetPayersAsync()
+    {
+        return await _context.Payers
+            .Select(p => new PayerDetailsDto
+            {
+                PayerId = p.PayerId,
+                PayerName = p.PayerName
+            })
+            .ToListAsync();
+    }
+
 }
+
+

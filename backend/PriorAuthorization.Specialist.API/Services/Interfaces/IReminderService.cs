@@ -11,4 +11,9 @@ public interface IReminderService
     Task UpdateReminderStatusAsync(
     int reminderId,
     UpdateReminderStatusRequest request);
+
+    Task<List<ReminderResponseDto>> GetRemindersAsync(
+    int? facilityId,
+    int? payerId,
+    byte? status);
 }
