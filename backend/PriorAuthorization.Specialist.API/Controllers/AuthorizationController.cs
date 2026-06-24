@@ -34,16 +34,20 @@ public class AuthorizationController : ControllerBase
 
     [HttpPost("{authId}/services")]
     public async Task<IActionResult> AddService(
-        int authId,
-        AddAuthorizationServiceDto dto)
+     int authId,
+     AddAuthorizationServiceDto dto)
     {
-        await _authorizationService
-            .AddServiceAsync(authId, dto);
+        var total =
+            await _authorizationService
+                .AddServiceAsync(
+                    authId,
+                    dto);
 
         return Ok(
-            ApiResponse<string>.SuccessResponse(
-                string.Empty,
-                "Service added successfully."));
+            ApiResponse<decimal>
+                .SuccessResponse(
+                    total,
+                    "Service added successfully."));
     }
 
     [HttpDelete("{authId}/services/{serviceId}")]

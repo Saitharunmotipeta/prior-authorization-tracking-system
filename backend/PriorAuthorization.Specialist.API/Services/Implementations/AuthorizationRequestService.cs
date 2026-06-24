@@ -146,9 +146,9 @@ public class AuthorizationRequestService : IAuthorizationService
             throw;
         }
     }
-    public async Task AddServiceAsync(
-    int authId,
-    AddAuthorizationServiceDto dto)
+    public async Task<decimal> AddServiceAsync(
+        int authId,
+        AddAuthorizationServiceDto dto)
     {
         var authorization =
             await _context.AuthorizationRequests
@@ -199,23 +199,35 @@ public class AuthorizationRequestService : IAuthorizationService
 
                 IcdCode = dto.IcdCode,
 
-                EstimatedCost = cpt.EstimatedCost,
+                EstimatedCost =
+                    cpt.EstimatedCost,
 
-                Notes = dto.Notes,
+                Notes =
+                    dto.Notes,
 
-                CreatedAt = DateTime.UtcNow
+                CreatedAt =
+                    DateTime.UtcNow
             };
 
-        _context.AuthorizationServices.Add(service);
+        _context.AuthorizationServices
+            .Add(service);
+
+        authorization.EstimatedTotalAmount +=
+            cpt.EstimatedCost;
+
+        authorization.UpdatedAt =
+            DateTime.UtcNow;
 
         _context.AuditHistories.Add(
             new AuditHistory
             {
                 AuthId = authId,
 
-                EncounterId = authorization.EncounterId,
+                EncounterId =
+                    authorization.EncounterId,
 
-                EntityId = $"Service-{dto.CptCode}",
+                EntityId =
+                    $"Service-{dto.CptCode}",
 
                 ActionType =
                     (byte)AuditActionType.Created,
@@ -231,6 +243,7 @@ public class AuthorizationRequestService : IAuthorizationService
             });
 
         await _context.SaveChangesAsync();
+        return authorization.EstimatedTotalAmount;
     }
     public async Task<List<AuthorizationServiceResponseDto>>
     GetServicesAsync(int authId)

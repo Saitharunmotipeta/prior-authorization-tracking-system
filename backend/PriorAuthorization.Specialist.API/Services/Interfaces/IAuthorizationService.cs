@@ -8,7 +8,7 @@ public interface IAuthorizationService
     Task<int> CreateAuthorizationRequestAsync(
      CreateAuthorizationRequestDto dto);
 
-    Task AddServiceAsync(
+    Task<decimal> AddServiceAsync(
         int authId,
         AddAuthorizationServiceDto dto);
 

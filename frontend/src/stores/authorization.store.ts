@@ -32,6 +32,7 @@ export const useAuthorizationStore =
           null as number | null,
 
         payerId: 0,
+        estimatedTotalAmount: 0,
 
         priority: 0,
         requestStatus:
@@ -47,6 +48,7 @@ export const useAuthorizationStore =
       }),
 
       actions: {
+        
         async createAuthorization(
           request:
             CreateAuthorizationRequest
@@ -96,14 +98,28 @@ export const useAuthorizationStore =
 
             this.error = null;
 
-            await addAuthorizationService(
-              this.authorizationRequestId,
-              request
-            );
+            const response =
+  await addAuthorizationService(
+    this.authorizationRequestId,
+    request
+  );
 
-            this.services.push(
-              request
-            );
+console.log(
+  "Backend Response:",
+  response
+);
+
+this.estimatedTotalAmount =
+  response.data;
+
+console.log(
+  "Estimated Total:",
+  this.estimatedTotalAmount
+);
+
+this.services.push(
+  request
+);
           }
           catch (error) {
             console.error(error);
@@ -127,6 +143,8 @@ export const useAuthorizationStore =
             null;
 
           this.payerId = 0;
+
+          this.estimatedTotalAmount = 0;
 
           this.priority = 0;
 
