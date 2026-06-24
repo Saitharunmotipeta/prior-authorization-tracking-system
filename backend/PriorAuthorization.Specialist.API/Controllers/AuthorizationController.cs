@@ -89,6 +89,35 @@ public class AuthorizationController : ControllerBase
                 string.Empty,
                 "Authorization request submitted successfully."));
     }
+    [HttpPatch("{authId}/resubmit")]
+    public async Task<IActionResult> ResubmitAuthorization(
+    int authId,
+    ResubmitAuthorizationDto dto)
+    {
+        await _authorizationService
+            .ResubmitAuthorizationAsync(
+                authId,
+                dto);
+
+        return Ok(
+            ApiResponse<string>.SuccessResponse(
+                string.Empty,
+                "Authorization request resubmitted successfully."));
+    }
+    [HttpGet("{authId}/timeline")]
+    public async Task<IActionResult> GetTimeline(
+    int authId)
+    {
+        var timeline =
+            await _authorizationService
+                .GetTimelineAsync(authId);
+
+        return Ok(
+            ApiResponse<List<AuthorizationTimelineDto>>
+                .SuccessResponse(
+                    timeline,
+                    "Timeline retrieved successfully."));
+    }
     [HttpGet("tat-priority")]
     public async Task<IActionResult>
         GetTatPriorityQueue(

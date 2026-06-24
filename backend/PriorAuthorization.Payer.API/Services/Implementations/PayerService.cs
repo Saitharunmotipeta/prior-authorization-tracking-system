@@ -53,16 +53,13 @@ public class PayerService : IPayerService
                         _context.AuthorizationRequests
                             .Count(a =>
                                 a.Encounter.FacilityId ==
-                                f.FacilityId &&
+                                f.FacilityId && a.PayerId==1 && 
                                 (
                                     a.Status ==
                                     (byte)RequestStatus.Submitted ||
 
                                     a.Status ==
-                                    (byte)RequestStatus.UnderReview ||
-
-                                    a.Status ==
-                                    (byte)RequestStatus.AdditionalInfoRequired
+                                    (byte)RequestStatus.ReSubmitted
                                 ))
                 })
                 .ToListAsync();
@@ -352,9 +349,13 @@ public class PayerService : IPayerService
         }
 
         var auth =
-            await _context.AuthorizationRequests
-                .FirstOrDefaultAsync(x =>
-                    x.AuthId == authId);
+     await _context.AuthorizationRequests
+         .FirstOrDefaultAsync(x =>
+             x.AuthId == authId &&
+             (
+                 x.Status == (byte)RequestStatus.Submitted ||
+                 x.Status == (byte)RequestStatus.ReSubmitted
+             ));
 
         if (auth == null)
         {

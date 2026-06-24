@@ -203,13 +203,15 @@ onMounted(async () => {
       </p>
 
       <button
-        v-if="
-          eligibilityResult.isEligible
+        v-if="eligibilityResult?.isEligible"
+        @click="
+            $router.push(
+            '/specialist/create-encounter'
+            )
         "
-        class="success-button"
-      >
+        >
         Create Encounter
-      </button>
+        </button>
 
     </div>
 
