@@ -11,11 +11,13 @@ namespace PriorAuthorization.Specialist.API.Services.Implementations;
 public class AuthorizationRequestService : IAuthorizationService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IReminderService _reminderService;
 
     public AuthorizationRequestService(
-        ApplicationDbContext context)
+        ApplicationDbContext context, IReminderService reminderService)
     {
         _context = context;
+        _reminderService = reminderService;
     }
     public async Task<int> CreateAuthorizationRequestAsync(
     CreateAuthorizationRequestDto dto)
@@ -627,8 +629,11 @@ public class AuthorizationRequestService : IAuthorizationService
             .ToListAsync();
     }
     public async Task<List<AuthorizationListItemDto>>
-    GetAwaitingReviewAuthorizationsAsync()
+GetAwaitingReviewAuthorizationsAsync()
     {
+        await _reminderService
+            .GenerateTatRemindersAsync();
+
         return await _context.AuthorizationRequests
             .AsNoTracking()
             .Include(a => a.Payer)

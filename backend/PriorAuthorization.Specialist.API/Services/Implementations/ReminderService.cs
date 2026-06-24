@@ -50,7 +50,7 @@ public class ReminderService : IReminderService
             {
                 await CreateReminderIfNotExists(
                     auth,
-                    "Authorization #{auth.AuthId} review deadline approaching.");
+                    $"Authorization #{auth.AuthId} review deadline approaching.");
             }
 
             else if (today ==
@@ -58,7 +58,7 @@ public class ReminderService : IReminderService
             {
                 await CreateReminderIfNotExists(
                     auth,
-                    "Authorization #{auth.AuthId} review deadline reached.");
+                    $"Authorization #{auth.AuthId} review deadline reached.");
             }
 
             else if (today >
@@ -66,7 +66,7 @@ public class ReminderService : IReminderService
             {
                 await CreateReminderIfNotExists(
                     auth,
-                    "Authorization #{auth.AuthId} review SLA exceeded.");
+                    $"Authorization #{auth.AuthId} review SLA exceeded.");
             }
         }
 
