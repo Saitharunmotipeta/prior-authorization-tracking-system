@@ -392,6 +392,8 @@ public class AuthorizationRequestService : IAuthorizationService
 
         authorization.Status =
             (byte)RequestStatus.ReSubmitted;
+        authorization.SubmittedAt =
+            DateTime.UtcNow;
 
         authorization.UpdatedAt =
             DateTime.UtcNow;
@@ -458,47 +460,51 @@ public class AuthorizationRequestService : IAuthorizationService
             .ToListAsync();
     }
     public async Task<List<AuthorizationTatResponse>>
-        GetTatPriorityQueueAsync(int facilityId)
+    GetTatPriorityQueueAsync(
+        int facilityId)
     {
-        var today = DateTime.UtcNow.Date;
+        var today =
+            DateTime.UtcNow.Date;
 
         var authRequests =
-    await (
-        from auth in _context.AuthorizationRequests
+            await (
+                from auth in _context.AuthorizationRequests
 
-        join payer in _context.Payers
-            on auth.PayerId equals payer.PayerId
+                join payer in _context.Payers
+                    on auth.PayerId equals payer.PayerId
 
-        join encounter in _context.Encounters
-            on auth.EncounterId equals encounter.EncounterId
+                join encounter in _context.Encounters
+                    on auth.EncounterId equals encounter.EncounterId
 
-        where encounter.FacilityId == facilityId
+                where encounter.FacilityId ==
+                      facilityId
 
-        where auth.SubmittedAt != null
+                where auth.Status ==
+                        (byte)RequestStatus.Submitted
+                    || auth.Status ==
+                        (byte)RequestStatus.ReSubmitted
 
-        where auth.Status != (byte)RequestStatus.Approved
-           && auth.Status != (byte)RequestStatus.Denied
-           && auth.Status != (byte)RequestStatus.Expired
+                select new
+                {
+                    auth.AuthId,
 
-        select new
-        {
-            auth.AuthId,
+                    payer.PayerName,
 
-            payer.PayerName,
+                    auth.Priority,
 
-            auth.Priority,
+                    auth.Status,
 
-            SubmittedAt =
-                auth.SubmittedAt!.Value,
+                    SubmittedAt =
+                        auth.SubmittedAt!.Value,
 
-            TatDays =
-                auth.Priority ==
-                (byte)Priority.Normal
-                    ? payer.NormalTatDays
-                    : payer.UrgentTatDays
-        }
-    )
-    .ToListAsync();
+                    TatDays =
+                        auth.Priority ==
+                        (byte)Priority.Normal
+                            ? payer.NormalTatDays
+                            : payer.UrgentTatDays
+                }
+            )
+            .ToListAsync();
 
         var result =
             authRequests
@@ -506,7 +512,7 @@ public class AuthorizationRequestService : IAuthorizationService
             {
                 var expectedReviewDate =
                     x.SubmittedAt.Date
-                    .AddDays(x.TatDays);
+                        .AddDays(x.TatDays);
 
                 var daysLeft =
                     (expectedReviewDate - today).Days;
@@ -516,40 +522,49 @@ public class AuthorizationRequestService : IAuthorizationService
                 if (daysLeft < 0)
                 {
                     tatStatus =
-                        $"Overdue by {Math.Abs(daysLeft)} day(s)";
+                        "Review SLA Exceeded";
                 }
                 else if (daysLeft == 0)
                 {
-                    tatStatus = "Due Today";
+                    tatStatus =
+                        "Review Deadline Reached";
                 }
-                else if (daysLeft <= 2)
+                else if (daysLeft <= 3)
                 {
                     tatStatus =
-                        $"Due in {daysLeft} day(s)";
+                        "Review Deadline Approaching";
                 }
                 else
                 {
-                    tatStatus = "Within TAT";
+                    tatStatus =
+                        "Within Review Timeline";
                 }
 
                 return new AuthorizationTatResponse
                 {
-                    AuthId = x.AuthId,
+                    AuthId =
+                        x.AuthId,
 
-                    PayerName = x.PayerName,
+                    PayerName =
+                        x.PayerName,
 
-                    Priority = x.Priority,
+                    Priority =
+                        x.Priority,
 
-                    SubmittedAt = x.SubmittedAt,
+                    SubmittedAt =
+                        x.SubmittedAt,
 
-                    TatDays = x.TatDays,
+                    TatDays =
+                        x.TatDays,
 
                     ExpectedReviewDate =
                         expectedReviewDate,
 
-                    DaysLeft = daysLeft,
+                    DaysLeft =
+                        daysLeft,
 
-                    TatStatus = tatStatus
+                    TatStatus =
+                        tatStatus
                 };
             })
             .OrderBy(x => x.DaysLeft)
