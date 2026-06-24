@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PriorAuthorization.Payer.API.Services;
 using PriorAuthorization.Payer.API.Services.Interfaces;
 using PriorAuthorization.Shared.Data;
@@ -27,6 +27,16 @@ builder.Host.UseSerilog();
 
 #region Services
 
+// ✅ ✅ ✅ ADD CORS HERE (BEFORE BUILD)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy => policy
+            .WithOrigins("http://localhost:5173") // ✅ frontend URL
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
 // Controllers
 builder.Services.AddControllers();
 
@@ -47,10 +57,13 @@ builder.Services.AddSwaggerGen();
 
 #endregion
 
-// Build Application
+// ✅ BUILD APPLICATION
 var app = builder.Build();
 
 #region Middleware
+
+// ✅ ✅ ✅ USE CORS HERE (AFTER BUILD, BEFORE CONTROLLERS)
+app.UseCors("AllowFrontend");
 
 // Global Exception Handling
 app.UseMiddleware<GlobalExceptionMiddleware>();
