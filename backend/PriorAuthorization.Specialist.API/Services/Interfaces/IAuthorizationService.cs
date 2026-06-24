@@ -21,6 +21,12 @@ public interface IAuthorizationService
 
     Task SubmitAuthorizationRequestAsync(
         int authId);
+    Task ResubmitAuthorizationAsync(
+    int authId,
+    ResubmitAuthorizationDto dto);
+
+    Task<List<AuthorizationTimelineDto>>
+    GetTimelineAsync(int authId);
 
     Task<List<AuthorizationTatResponse>>
         GetTatPriorityQueueAsync(int facilityId);
