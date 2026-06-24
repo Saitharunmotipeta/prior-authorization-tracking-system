@@ -143,13 +143,6 @@ onMounted(async () => {
           </div>
 
           <div class="charts-grid">
-            <StatusDistributionChart
-              :approved="dashboard.approvedRequests"
-              :denied="dashboard.deniedRequests"
-              :pending="dashboard.pendingRequests"
-              :expired="dashboard.expiredRequests"
-            />
-
             <RevenueRiskCard
               :revenue-at-risk="revenueAtRisk"
             />
