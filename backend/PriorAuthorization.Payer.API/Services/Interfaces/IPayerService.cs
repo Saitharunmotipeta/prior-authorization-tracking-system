@@ -10,9 +10,8 @@ namespace PriorAuthorization.Payer.API.Services.Interfaces
         Task<bool> ReviewAuthorization(int authId, ReviewRequest dto);
         Task<List<RequestLists>> GetEmergencyRequests();
         Task<ReminderListResponseDto> GetReminders();
-
-
         Task<List<AuditHistoryDto>> GetPayerAuditHistory();
+        Task<List<PayerDetailsDto>> GetPayersAsync();
     }
        
 }

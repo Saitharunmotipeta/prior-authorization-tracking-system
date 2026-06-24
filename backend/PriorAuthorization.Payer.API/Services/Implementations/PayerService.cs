@@ -689,6 +689,16 @@ public class PayerService : IPayerService
             throw new InternalServerException("Failed to fetch audit history");
         }
     }
+    public async Task<List<PayerDetailsDto>> GetPayersAsync()
+    {
+        return await _context.Payers
+            .Select(p => new PayerDetailsDto
+            {
+                PayerId = p.PayerId,
+                PayerName = p.PayerName
+            })
+            .ToListAsync();
+    }
 
 }
 
