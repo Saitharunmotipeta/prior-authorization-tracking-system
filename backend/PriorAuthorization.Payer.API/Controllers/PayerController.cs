@@ -102,7 +102,7 @@ namespace PriorAuthorization.Payer.API.Controllers
 
 
 
-        [HttpGet("Remainders")]
+        [HttpGet("Reminders")]
         public async Task<IActionResult> GetReminders()
         {
             var result =

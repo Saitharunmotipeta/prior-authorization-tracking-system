@@ -29,30 +29,23 @@ defineProps<Props>();
 
 <style scoped>
 .metric-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: white;
   border-radius: 12px;
-  padding: 20px;
-  min-height: 120px;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  box-shadow:
-    0 1px 2px rgba(0,0,0,0.05);
+  padding: 24px;
+  text-align: center;
+  border: 1px solid #dbeafe;
 }
 
 .metric-title {
-  font-size: 14px;
+  font-size: 16px;
   color: #6b7280;
   margin-bottom: 12px;
 }
 
 .metric-value {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
-  color: #111827;
+  color: #2563eb;
 }
 
 .metric-subtitle {
