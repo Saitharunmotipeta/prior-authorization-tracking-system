@@ -51,21 +51,21 @@ public class AuthorizationController : ControllerBase
                         "Services added successfully."));
         }
 
-    [HttpDelete("{authId}/services/{serviceId}")]
-    public async Task<IActionResult> AddServices(
-        int authId,
-        AddAuthorizationServiceListDto dto)
-    {
-        await _authorizationService
-            .RemoveServiceAsync(
-                authId,
-                serviceId);
+        [HttpDelete("{authId}/services/{serviceId}")]
+        public async Task<IActionResult> RemoveService(
+            int authId,
+            int serviceId)
+        {
+            await _authorizationService
+                .RemoveServiceAsync(
+                    authId,
+                    serviceId);
 
-        return Ok(
-            ApiResponse<string>.SuccessResponse(
-                string.Empty,
-                "Service removed successfully."));
-    }
+            return Ok(
+                ApiResponse<string>.SuccessResponse(
+                    string.Empty,
+                    "Service removed successfully."));
+        }
 
     [HttpGet("{authId}/services")]
     public async Task<IActionResult> GetServices(

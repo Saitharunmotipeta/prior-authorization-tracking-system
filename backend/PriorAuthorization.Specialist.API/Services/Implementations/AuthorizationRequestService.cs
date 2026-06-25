@@ -150,7 +150,7 @@ public class AuthorizationRequestService : IAuthorizationService
     }
     public async Task<decimal> AddServicesAsync(
         int authId,
-        AddAuthorizationServiceDto dto)
+        AddAuthorizationServiceListDto dto)
     {
         var authorization =
             await _context.AuthorizationRequests
