@@ -6,6 +6,10 @@ import {
 } from "../api/specialist.api";
 
 import {
+    submitAuthorization
+} from "../api/payer.api";
+
+import {
   getErrorMessage
 } from "../utils/error-handler";
 
@@ -18,7 +22,8 @@ import type {
 } from "../types/authorization.interface";
 
 import type {
-  AddAuthorizationServiceRequest
+  AddAuthorizationServiceRequest,
+  AddAuthorizationServiceListRequest
 } from "../types/authorization-service.interface";
 
 export const useAuthorizationStore =
@@ -48,6 +53,67 @@ export const useAuthorizationStore =
       }),
 
       actions: {
+
+async submitAuthorizationRequest() {
+
+    try {
+
+        this.loading = true;
+
+        this.error = null;
+
+        if (this.authorizationRequestId === null) {
+
+            throw new Error(
+                "Authorization Request Id not found."
+            );
+
+        }
+
+        const response =
+          await addAuthorizationService(
+              this.authorizationRequestId,
+              {
+                  services: this.services
+              }
+          );
+
+      console.log("API Response", response);
+      console.log("Amount", response.data);
+
+      this.estimatedTotalAmount =
+          response.data;
+
+      console.log(
+          "Store Amount",
+          this.estimatedTotalAmount
+      );
+
+        await submitAuthorization(
+            this.authorizationRequestId
+        );
+
+        this.requestStatus =
+            RequestStatus.Submitted;
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        this.error =
+            getErrorMessage(error);
+
+        throw error;
+
+    }
+    finally {
+
+        this.loading = false;
+
+    }
+
+},
         
         async createAuthorization(
           request:
@@ -82,57 +148,12 @@ export const useAuthorizationStore =
         },
 
         async addService(
-          request:
-            AddAuthorizationServiceRequest
-        ) {
-          if (
-            !this.authorizationRequestId
-          ) {
-            throw new Error(
-              "Authorization Request Id not found."
-            );
-          }
+    request: AddAuthorizationServiceRequest
+) {
 
-          try {
-            this.loading = true;
+    this.services.push(request);
 
-            this.error = null;
-
-            const response =
-  await addAuthorizationService(
-    this.authorizationRequestId,
-    request
-  );
-
-console.log(
-  "Backend Response:",
-  response
-);
-
-this.estimatedTotalAmount =
-  response.data;
-
-console.log(
-  "Estimated Total:",
-  this.estimatedTotalAmount
-);
-
-this.services.push(
-  request
-);
-          }
-          catch (error) {
-            console.error(error);
-
-            this.error =
-              getErrorMessage(error);
-
-            throw error;
-          }
-          finally {
-            this.loading = false;
-          }
-        },
+},
 
         clearError() {
           this.error = null;
