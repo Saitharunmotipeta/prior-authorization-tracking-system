@@ -6,6 +6,8 @@ import type {
   Department,
   PatientLookup,
   EligibilityResult,
+  CptCode,
+  IcdCode
 } from "../types/specialist.interface";
 
 import type {
