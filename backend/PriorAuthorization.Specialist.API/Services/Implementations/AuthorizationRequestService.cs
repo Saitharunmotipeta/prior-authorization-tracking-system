@@ -149,7 +149,7 @@ public class AuthorizationRequestService : IAuthorizationService
         }
     }
     public async Task AddServicesAsync(
-        int authId,
+    int authId,
         AddAuthorizationServiceListDto dto)
     {
         var authorization =
@@ -170,101 +170,63 @@ public class AuthorizationRequestService : IAuthorizationService
                 "Services can only be modified in Draft status.");
         }
 
-        decimal estimatedTotalAmount = 0;
+        var cpt =
+            await _context.Cptcodes
+                .FirstOrDefaultAsync(c =>
+                    c.CptCode1 == dto.CptCode);
 
-        foreach (var item in dto.Services)
+        if (cpt == null)
         {
-            var cpt =
-                await _context.Cptcodes
-                    .FirstOrDefaultAsync(c =>
-                        c.CptCode1 == item.CptCode);
-
-            if (cpt == null)
-            {
-                throw new NotFoundException(
-                    $"CPT Code '{item.CptCode}' not found.");
-            }
-
-            var icdExists =
-                await _context.Icdcodes
-                    .AnyAsync(i =>
-                        i.IcdCode1 == item.IcdCode);
-
-            if (!icdExists)
-            {
-                throw new NotFoundException(
-                    $"ICD Code '{item.IcdCode}' not found.");
-            }
-
-            estimatedTotalAmount +=
-                cpt.EstimatedCost;
-
-            _context.AuthorizationServices.Add(
-                new AuthorizationService
-                {
-                    AuthId = authId,
-
-                    CptCode = item.CptCode,
-
-                    IcdCode = item.IcdCode,
-
-                    EstimatedCost = cpt.EstimatedCost,
-
-                    Notes = item.Notes,
-
-                    CreatedAt = DateTime.UtcNow
-                });
-
-            _context.AuditHistories.Add(
-                new AuditHistory
-                {
-                    AuthId = authId,
-
-                    EncounterId =
-                        authorization.EncounterId,
-
-                    EntityId =
-                        $"Service-{item.CptCode}",
-
-                    ActionType =
-                        (byte)AuditActionType.Created,
-
-                    PerformedByRole =
-                        (byte)UserRole.Specialist,
-
-                    Remarks =
-                        $"Added service CPT {item.CptCode}",
-
-                    CreatedAt =
-                        DateTime.UtcNow
-                });
+            throw new NotFoundException(
+                $"CPT Code '{dto.CptCode}' not found.");
         }
 
-        authorization.EstimatedTotalAmount +=
-            estimatedTotalAmount;
+        var icdExists =
+            await _context.Icdcodes
+                .AnyAsync(i =>
+                    i.IcdCode1 == dto.IcdCode);
 
-        authorization.UpdatedAt =
-            DateTime.UtcNow;
+        if (!icdExists)
+        {
+            throw new NotFoundException(
+                $"ICD Code '{dto.IcdCode}' not found.");
+        }
+
+        var service =
+            new AuthorizationService
+            {
+                AuthId = authId,
+
+                CptCode = dto.CptCode,
+
+                IcdCode = dto.IcdCode,
+
+                EstimatedCost = cpt.EstimatedCost,
+
+                Notes = dto.Notes,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+        _context.AuthorizationServices.Add(service);
 
         _context.AuditHistories.Add(
             new AuditHistory
             {
                 AuthId = authId,
 
-                EncounterId =
-                    authorization.EncounterId,
+                EncounterId = authorization.EncounterId,
 
-                EntityId =
-                    $"Authorization-{authId}",
+                EntityId = $"Service-{dto.CptCode}",
 
                 ActionType =
-                    (byte)AuditActionType.Updated,
+                    (byte)AuditActionType.Created,
 
                 PerformedByRole =
                     (byte)UserRole.Specialist,
 
                 Remarks =
-                    $"Added {dto.Services.Count} service(s). Estimated Amount Increased By ₹{estimatedTotalAmount}",
+                    $"Added service CPT {dto.CptCode}",
 
                 CreatedAt =
                     DateTime.UtcNow

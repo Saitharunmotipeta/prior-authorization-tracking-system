@@ -35,15 +35,11 @@ const {
   storeToRefs(
     authorizationStore
   );
+const cptResults = ref([]);
+const icdResults = ref([]);
 
-const cptCode =
-  ref("");
-
-const icdCode =
-  ref("");
-
-const notes =
-  ref("");
+const selectedCpt = ref(null);
+const selectedIcd = ref(null);
 
 const addService =
   async () => {
