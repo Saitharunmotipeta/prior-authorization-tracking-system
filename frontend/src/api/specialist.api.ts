@@ -159,7 +159,7 @@ export const verifyEncounter = async (
 
     const response =
       await specialistApiClient.get(
-        "/api/icdcodes"
+        "/api/icd-codes"
       );
 
     return response.data;

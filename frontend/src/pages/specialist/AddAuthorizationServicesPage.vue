@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import {
+  ref,
+  onMounted
+} from "vue";
 
-import { storeToRefs } from "pinia";
+import {
+  storeToRefs
+} from "pinia";
 
-import { useRouter } from "vue-router";
+import {
+  useRouter
+} from "vue-router";
 
 import {
   Plus,
@@ -20,6 +27,10 @@ from "../../components/common/AppStatusBadge.vue";
 import {
   useAuthorizationStore
 } from "../../stores/authorization.store";
+import {
+  getCptCodes,
+  getIcdCodes
+} from "../../api/specialist.api.ts";
 
 const router = useRouter();
 
@@ -35,29 +46,144 @@ const {
   storeToRefs(
     authorizationStore
   );
-const cptResults = ref([]);
-const icdResults = ref([]);
 
-const selectedCpt = ref(null);
-const selectedIcd = ref(null);
+const cptSearchText =
+  ref("");
+
+const icdSearchText =
+  ref("");
+
+const selectedCptCode =
+  ref("");
+
+const selectedIcdCode =
+  ref("");
+
+const notes =
+  ref("");
+
+const cptResults =
+  ref<any[]>([]);
+
+const icdResults =
+  ref<any[]>([]);
+
+const allCptCodes =
+  ref<any[]>([]);
+
+const allIcdCodes =
+  ref<any[]>([]);
+
+const searchCpt =
+  () => {
+
+    if (
+      cptSearchText.value
+        .length < 2
+    ) {
+      cptResults.value = [];
+      return;
+    }
+
+    cptResults.value =
+      allCptCodes.value.filter(
+        x =>
+          x.cptDescription
+            .toLowerCase()
+            .includes(
+              cptSearchText.value
+                .toLowerCase()
+            )
+      );
+  };
+onMounted(
+  async () => {
+
+    const cptResponse =
+      await getCptCodes();
+
+    allCptCodes.value =
+      cptResponse.data;
+
+    const icdResponse =
+      await getIcdCodes();
+
+    allIcdCodes.value =
+      icdResponse.data;
+  }
+);
+const searchIcd =
+  () => {
+
+    if (
+      icdSearchText.value
+        .length < 2
+    ) {
+      icdResults.value = [];
+      return;
+    }
+
+    icdResults.value =
+      allIcdCodes.value.filter(
+        x =>
+          x.icdDescription
+            .toLowerCase()
+            .includes(
+              icdSearchText.value
+                .toLowerCase()
+            )
+      );
+  };
+
+const selectCpt =
+  (item: any) => {
+
+    selectedCptCode.value =
+      item.cptCode;
+
+    cptSearchText.value =
+      item.cptDescription;
+
+    cptResults.value = [];
+  };
+
+const selectIcd =
+  (item: any) => {
+
+    selectedIcdCode.value =
+      item.icdCode;
+
+    icdSearchText.value =
+      item.icdDescription;
+
+    icdResults.value = [];
+  };
 
 const addService =
   async () => {
+
     await authorizationStore
       .addService({
         cptCode:
-          cptCode.value,
+          selectedCptCode.value,
 
         icdCode:
-          icdCode.value,
+          selectedIcdCode.value,
 
         notes:
           notes.value
       });
 
-    cptCode.value = "";
-    icdCode.value = "";
+    cptSearchText.value = "";
+    icdSearchText.value = "";
+
+    selectedCptCode.value = "";
+    selectedIcdCode.value = "";
+
     notes.value = "";
+
+    cptResults.value = [];
+    icdResults.value = [];
   };
 
 const goToSummary =
@@ -67,7 +193,6 @@ const goToSummary =
     );
   };
 </script>
-
 <template>
   <div class="page">
 
@@ -118,16 +243,63 @@ const goToSummary =
 
       </p>
 
-      <input
-        v-model="cptCode"
-        placeholder="Enter CPT Code"
-      />
+      <div class="search-container">
 
-      <input
-        v-model="icdCode"
-        placeholder="Enter ICD Code"
-      />
+  <input
+    v-model="cptSearchText"
+    placeholder="Search CPT Service"
+    @input="searchCpt"
+  />
 
+  <div
+    v-if="cptResults.length"
+    class="dropdown"
+  >
+
+    <div
+      v-for="item in cptResults"
+      :key="item.cptCode"
+      class="dropdown-item"
+      @click="selectCpt(item)"
+    >
+
+      {{ item.cptDescription }}
+      ({{ item.cptCode }})
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="search-container">
+
+  <input
+    v-model="icdSearchText"
+    placeholder="Search Diagnosis"
+    @input="searchIcd"
+  />
+
+  <div
+    v-if="icdResults.length"
+    class="dropdown"
+  >
+
+    <div
+      v-for="item in icdResults"
+      :key="item.icdCode"
+      class="dropdown-item"
+      @click="selectIcd(item)"
+    >
+
+      {{ item.icdDescription }}
+      ({{ item.icdCode }})
+
+    </div>
+
+  </div>
+
+</div>
       <textarea
         v-model="notes"
         placeholder="Clinical Notes"
@@ -359,5 +531,46 @@ textarea {
   padding: 20px;
 
   text-align: center;
+}
+.search-container {
+  position: relative;
+
+  margin-bottom: 14px;
+}
+
+.dropdown {
+  position: absolute;
+
+  top: 100%;
+
+  left: 0;
+
+  width: 100%;
+
+  background: white;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 8px;
+
+  max-height: 220px;
+
+  overflow-y: auto;
+
+  z-index: 1000;
+
+  box-shadow:
+    0 4px 12px
+    rgb(0 0 0 / 10%);
+}
+
+.dropdown-item {
+  padding: 10px;
+
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: #f1f5f9;
 }
 </style>

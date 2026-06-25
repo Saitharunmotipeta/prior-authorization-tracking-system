@@ -172,68 +172,67 @@ public class AuthorizationRequestService : IAuthorizationService
         }
         decimal oldEstimatedAmount = authorization.EstimatedTotalAmount;
 
-        var cpt =
-            await _context.Cptcodes
-                .FirstOrDefaultAsync(c =>
-                    c.CptCode1 == dto.CptCode);
+        decimal estimatedTotalAmount = 0;
 
-        if (cpt == null)
+        foreach (var item in dto.Services)
         {
-            throw new NotFoundException(
-                $"CPT Code '{dto.CptCode}' not found.");
-        }
+            var cpt =
+                await _context.Cptcodes
+                    .FirstOrDefaultAsync(c =>
+                        c.CptCode1 == item.CptCode);
 
-        var icdExists =
-            await _context.Icdcodes
-                .AnyAsync(i =>
-                    i.IcdCode1 == dto.IcdCode);
+            if (cpt == null)
+            {
+                throw new NotFoundException(
+                    $"CPT Code '{item.CptCode}' not found.");
+            }
 
-        if (!icdExists)
-        {
-            throw new NotFoundException(
-                $"ICD Code '{dto.IcdCode}' not found.");
-        }
+            var icdExists =
+                await _context.Icdcodes
+                    .AnyAsync(i =>
+                        i.IcdCode1 == item.IcdCode);
+
+            if (!icdExists)
+            {
+                throw new NotFoundException(
+                    $"ICD Code '{item.IcdCode}' not found.");
+            }
 
             estimatedTotalAmount +=
                 cpt.EstimatedCost;
 
             _context.AuthorizationServices.Add(
-                new AuthorizationService
-                {
-                    AuthId = authId,
-
-                    CptCode = item.CptCode,
-
-                    IcdCode = item.IcdCode,
-
-                EstimatedCost = cpt.EstimatedCost,
-
-                    Notes = item.Notes,
-
-                    CreatedAt = DateTime.UtcNow
-                });
-
-        _context.AuditHistories.Add(
-            new AuditHistory
+            new AuthorizationService
             {
                 AuthId = authId,
 
-                EncounterId = authorization.EncounterId,
+                CptCode = item.CptCode,
 
-                    EntityId =
-                        $"Service-{item.CptCode}",
+                IcdCode = item.IcdCode,
 
-                    ActionType =
-                        (byte)AuditActionType.Created,
+                EstimatedCost = cpt.EstimatedCost,
 
-                    PerformedByRole =
-                        (byte)UserRole.Specialist,
+                Notes = item.Notes,
 
-                    Remarks =
-                        $"Added service CPT {item.CptCode}",
+                CreatedAt = DateTime.UtcNow
+            });
 
-                    CreatedAt =
-                        DateTime.UtcNow
+            _context.AuditHistories.Add(
+                new AuditHistory
+                {
+                    AuthId = authId,
+
+                    EncounterId = authorization.EncounterId,
+
+                    EntityId = $"Service-{item.CptCode}",
+
+                    ActionType = (byte)AuditActionType.Created,
+
+                    PerformedByRole = (byte)UserRole.Specialist,
+
+                    Remarks = $"Added service CPT {item.CptCode}",
+
+                    CreatedAt = DateTime.UtcNow
                 });
         }
 
@@ -242,6 +241,18 @@ public class AuthorizationRequestService : IAuthorizationService
 
         authorization.UpdatedAt =
             DateTime.UtcNow;
+
+        var oldValue = JsonSerializer.Serialize(
+            new
+            {
+                EstimatedTotalAmount = oldEstimatedAmount
+            });
+
+        var newValue = JsonSerializer.Serialize(
+            new
+            {
+                EstimatedTotalAmount = authorization.EstimatedTotalAmount
+            });
 
         _context.AuditHistories.Add(
             new AuditHistory
@@ -256,6 +267,10 @@ public class AuthorizationRequestService : IAuthorizationService
 
                 ActionType =
                     (byte)AuditActionType.Updated,
+
+                OldValue = oldValue,
+
+                NewValue = newValue,
 
                 PerformedByRole =
                     (byte)UserRole.Specialist,

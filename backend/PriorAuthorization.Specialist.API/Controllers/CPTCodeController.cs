@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PriorAuthorization.Shared.Common;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 
@@ -17,12 +18,17 @@ public class CPTCodeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<CPTCodeDto>>>
-        GetCPTCodes()
+    public async Task<IActionResult>
+    GetCPTCodes()
     {
         var codes =
-            await _cptCodeService.GetCPTCodesAsync();
+            await _cptCodeService
+                .GetCPTCodesAsync();
 
-        return Ok(codes);
+        return Ok(
+            ApiResponse<List<CPTCodeDto>>
+                .SuccessResponse(
+                    codes,
+                    "CPT codes retrieved successfully."));
     }
 }
