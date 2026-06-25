@@ -62,11 +62,22 @@ const chartOptions = {
   plugins: {
     title: {
       display: true,
-      text: "Slowest Payers"
+      // text: "Slowest Payers"
     },
 
     legend: {
       display: false
+    }
+  },
+
+  scales: {
+    y: {
+      beginAtZero: true,
+
+      title: {
+        display: true,
+        text: "Average Response Days"
+      }
     }
   }
 };
@@ -74,6 +85,11 @@ const chartOptions = {
 
 <template>
   <div class="chart-card">
+    <div class="chart-header">
+    <h3 style="text-align: center;">
+      Slowest Payers
+    </h3>
+    </div>
     <div class="chart-wrapper">
       <Bar
         :data="chartData"

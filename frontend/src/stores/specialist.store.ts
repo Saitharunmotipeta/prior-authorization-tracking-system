@@ -7,6 +7,10 @@ import {
   verifyEligibility
 } from "../api/specialist.api";
 
+import {
+  getErrorMessage
+} from "../utils/error-handler";
+
 import type {
   Facility,
   Department,
@@ -18,6 +22,8 @@ export const useSpecialistStore =
   defineStore(
     "specialist",
     {
+      persist: true,
+
       state: () => ({
         facilities: [] as Facility[],
 
@@ -44,9 +50,28 @@ export const useSpecialistStore =
       }),
 
       actions: {
+        async resetWorkflow() {
+  this.selectedFacilityId =
+    null;
+
+  this.selectedDepartmentId =
+    null;
+
+  this.mrnNumber = "";
+
+  this.patientLookup =
+    null;
+
+  this.eligibilityResult =
+    null;
+
+  this.error = null;
+},
         async loadFacilities() {
           try {
             this.loading = true;
+
+            this.error = null;
 
             const response =
               await getFacilities();
@@ -58,7 +83,7 @@ export const useSpecialistStore =
             console.error(error);
 
             this.error =
-              "Failed to load facilities";
+              getErrorMessage(error);
           }
           finally {
             this.loading = false;
@@ -70,6 +95,8 @@ export const useSpecialistStore =
         ) {
           try {
             this.loading = true;
+
+            this.error = null;
 
             this.selectedFacilityId =
               facilityId;
@@ -95,7 +122,7 @@ export const useSpecialistStore =
             console.error(error);
 
             this.error =
-              "Failed to load departments";
+              getErrorMessage(error);
           }
           finally {
             this.loading = false;
@@ -119,6 +146,8 @@ export const useSpecialistStore =
           try {
             this.loading = true;
 
+            this.error = null;
+
             this.patientLookup =
               await lookupPatient(
                 this.mrnNumber
@@ -128,7 +157,7 @@ export const useSpecialistStore =
             console.error(error);
 
             this.error =
-              "Patient not found";
+              getErrorMessage(error);
           }
           finally {
             this.loading = false;
@@ -144,6 +173,8 @@ export const useSpecialistStore =
 
             this.loading = true;
 
+            this.error = null;
+
             const response =
               await verifyEligibility(
                 this.patientLookup
@@ -157,11 +188,15 @@ export const useSpecialistStore =
             console.error(error);
 
             this.error =
-              "Eligibility verification failed";
+              getErrorMessage(error);
           }
           finally {
             this.loading = false;
           }
+        },
+
+        clearError() {
+          this.error = null;
         }
       }
     }

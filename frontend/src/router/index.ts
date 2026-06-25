@@ -4,7 +4,7 @@ import managerRoutes from "./manager.routes";
 import { specialistRoutes } from "./specialist.routes";
 
 // ✅ Use alias (BEST PRACTICE)
-import PayerLayout from "@/layouts/Payer/MainLayout.vue";
+import PayerLayout from "../layouts/Payer/MainLayout.vue";
 
 const routes = [
   // ✅ Existing routes
@@ -18,7 +18,7 @@ const routes = [
   children: [
     {
       path: '',
-      component: () => import('@/pages/Payer/Dashboard.vue'),
+      component: () => import('../pages/Payer/Dashboard.vue'),
     }
   ]
 }
