@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37314.3 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriorAuthorization.DataSeeder", "PriorAuthorization.DataSeeder.csproj", "{9DC1D0DC-1BA5-6862-56F8-91CA64D76DB7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9DC1D0DC-1BA5-6862-56F8-91CA64D76DB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DC1D0DC-1BA5-6862-56F8-91CA64D76DB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DC1D0DC-1BA5-6862-56F8-91CA64D76DB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DC1D0DC-1BA5-6862-56F8-91CA64D76DB7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {14177647-A827-46E7-88BB-6F859D9D99D7}
+	EndGlobalSection
+EndGlobal
