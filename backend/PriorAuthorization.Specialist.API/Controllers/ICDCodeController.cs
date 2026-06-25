@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PriorAuthorization.Shared.Common;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 
@@ -17,11 +18,15 @@ public class ICDCodeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ICDCodeDto>>>
-        GetICDCodes()
+    public async Task<ActionResult<ApiResponse<List<ICDCodeDto>>>> GetICDCodes()
     {
+        var icdCodes = await _icdCodeService.GetICDCodesAsync();
+
         return Ok(
-            await _icdCodeService.GetICDCodesAsync()
+            ApiResponse<List<ICDCodeDto>>.SuccessResponse(
+                icdCodes,
+                "ICD codes retrieved successfully."
+            )
         );
     }
 }
