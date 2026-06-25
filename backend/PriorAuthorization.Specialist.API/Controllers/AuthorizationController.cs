@@ -33,17 +33,17 @@ public class AuthorizationController : ControllerBase
     }
 
     [HttpPost("{authId}/services")]
-    public async Task<IActionResult> AddService(
+    public async Task<IActionResult> AddServices(
         int authId,
-        AddAuthorizationServiceDto dto)
+        AddAuthorizationServiceListDto dto)
     {
         await _authorizationService
-            .AddServiceAsync(authId, dto);
+            .AddServicesAsync(authId, dto);
 
         return Ok(
             ApiResponse<string>.SuccessResponse(
                 string.Empty,
-                "Service added successfully."));
+                "Services added successfully."));
     }
 
     [HttpDelete("{authId}/services/{serviceId}")]
