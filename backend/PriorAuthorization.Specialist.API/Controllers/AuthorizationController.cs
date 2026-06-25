@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PriorAuthorization.Shared.Common;
 using PriorAuthorization.Shared.Entities;
+using PriorAuthorization.Shared.Enums;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 
@@ -32,28 +33,28 @@ public class AuthorizationController : ControllerBase
                 "Authorization request created successfully."));
     }
 
-    [HttpPost("{authId}/services")]
-    public async Task<IActionResult> AddService(
-     int authId,
-     AddAuthorizationServiceDto dto)
-    {
-        var total =
-            await _authorizationService
-                .AddServiceAsync(
-                    authId,
-                    dto);
+        [HttpPost("{authId}/services")]
+        public async Task<IActionResult> AddServices(
+            int authId,
+            AddAuthorizationServiceListDto dto)
+        {
+            var total =
+                await _authorizationService
+                    .AddServicesAsync(
+                        authId,
+                        dto);
 
-        return Ok(
-            ApiResponse<decimal>
-                .SuccessResponse(
-                    total,
-                    "Service added successfully."));
-    }
+            return Ok(
+                ApiResponse<decimal>
+                    .SuccessResponse(
+                        total,
+                        "Services added successfully."));
+        }
 
     [HttpDelete("{authId}/services/{serviceId}")]
-    public async Task<IActionResult> RemoveService(
+    public async Task<IActionResult> AddServices(
         int authId,
-        int serviceId)
+        AddAuthorizationServiceListDto dto)
     {
         await _authorizationService
             .RemoveServiceAsync(
@@ -133,5 +134,38 @@ public class AuthorizationController : ControllerBase
                     facilityId);
 
         return Ok(result);
+    }
+    [HttpGet]
+    public async Task<IActionResult>
+    GetAuthorizations(
+        [FromQuery]
+        RequestStatus? status)
+    {
+        var result =
+            await _authorizationService
+                .GetAuthorizationsAsync(
+                    status);
+
+        return Ok(
+            ApiResponse<
+                List<AuthorizationListItemDto>>
+                .SuccessResponse(
+                    result,
+                    "Authorizations retrieved successfully."));
+    }
+    [HttpGet("awaiting-review")]
+    public async Task<IActionResult>
+    GetAwaitingReview()
+    {
+        var result =
+            await _authorizationService
+                .GetAwaitingReviewAuthorizationsAsync();
+
+        return Ok(
+            ApiResponse<
+                List<AuthorizationListItemDto>>
+                .SuccessResponse(
+                    result,
+                    "Awaiting review authorizations retrieved successfully."));
     }
 }

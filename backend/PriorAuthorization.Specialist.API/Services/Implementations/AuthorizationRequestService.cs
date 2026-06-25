@@ -11,11 +11,13 @@ namespace PriorAuthorization.Specialist.API.Services.Implementations;
 public class AuthorizationRequestService : IAuthorizationService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IReminderService _reminderService;
 
     public AuthorizationRequestService(
-        ApplicationDbContext context)
+        ApplicationDbContext context, IReminderService reminderService)
     {
         _context = context;
+        _reminderService = reminderService;
     }
     public async Task<int> CreateAuthorizationRequestAsync(
     CreateAuthorizationRequestDto dto)
@@ -146,7 +148,7 @@ public class AuthorizationRequestService : IAuthorizationService
             throw;
         }
     }
-    public async Task<decimal> AddServiceAsync(
+    public async Task<decimal> AddServicesAsync(
         int authId,
         AddAuthorizationServiceDto dto)
     {
@@ -168,52 +170,72 @@ public class AuthorizationRequestService : IAuthorizationService
                 "Services can only be modified in Draft status.");
         }
 
-        var cpt =
-            await _context.Cptcodes
-                .FirstOrDefaultAsync(c =>
-                    c.CptCode1 == dto.CptCode);
+        decimal estimatedTotalAmount = 0;
 
-        if (cpt == null)
+        foreach (var item in dto.Services)
         {
-            throw new NotFoundException(
-                $"CPT Code '{dto.CptCode}' not found.");
-        }
+            var cpt =
+                await _context.Cptcodes
+                    .FirstOrDefaultAsync(c =>
+                        c.CptCode1 == item.CptCode);
 
-        var icdExists =
-            await _context.Icdcodes
-                .AnyAsync(i =>
-                    i.IcdCode1 == dto.IcdCode);
+            if (cpt == null)
+            {
+                throw new NotFoundException(
+                    $"CPT Code '{item.CptCode}' not found.");
+            }
 
-        if (!icdExists)
-        {
-            throw new NotFoundException(
-                $"ICD Code '{dto.IcdCode}' not found.");
-        }
+            var icdExists =
+                await _context.Icdcodes
+                    .AnyAsync(i =>
+                        i.IcdCode1 == item.IcdCode);
 
-        var service =
+            if (!icdExists)
+            {
+                throw new NotFoundException(
+                    $"ICD Code '{item.IcdCode}' not found.");
+            }
+
+            estimatedTotalAmount +=
+                cpt.EstimatedCost;
+
+        _context.AuthorizationServices.Add(
             new AuthorizationService
             {
                 AuthId = authId,
 
-                CptCode = dto.CptCode,
+                CptCode = item.CptCode,
 
-                IcdCode = dto.IcdCode,
+                IcdCode = item.IcdCode,
 
-                EstimatedCost =
-                    cpt.EstimatedCost,
+                EstimatedCost = cpt.EstimatedCost,
 
-                Notes =
-                    dto.Notes,
+                Notes = item.Notes,
 
-                CreatedAt =
-                    DateTime.UtcNow
-            };
+                CreatedAt = DateTime.UtcNow
+            });
 
-        _context.AuthorizationServices
-            .Add(service);
+        _context.AuditHistories.Add(
+            new AuditHistory
+            {
+                AuthId = authId,
+
+                EncounterId = authorization.EncounterId,
+
+                EntityId = $"Service-{item.CptCode}",
+
+                ActionType = (byte)AuditActionType.Created,
+
+                PerformedByRole = (byte)UserRole.Specialist,
+
+                Remarks = $"Added service CPT {item.CptCode}",
+
+                CreatedAt = DateTime.UtcNow
+            });
+        }
 
         authorization.EstimatedTotalAmount +=
-            cpt.EstimatedCost;
+            estimatedTotalAmount;
 
         authorization.UpdatedAt =
             DateTime.UtcNow;
@@ -227,16 +249,16 @@ public class AuthorizationRequestService : IAuthorizationService
                     authorization.EncounterId,
 
                 EntityId =
-                    $"Service-{dto.CptCode}",
+                    $"Authorization-{authId}",
 
                 ActionType =
-                    (byte)AuditActionType.Created,
+                    (byte)AuditActionType.Updated,
 
                 PerformedByRole =
                     (byte)UserRole.Specialist,
 
                 Remarks =
-                    $"Added service CPT {dto.CptCode}",
+                    $"Added {dto.Services.Count} service(s). Estimated Amount Increased By ₹{estimatedTotalAmount}",
 
                 CreatedAt =
                     DateTime.UtcNow
@@ -405,6 +427,8 @@ public class AuthorizationRequestService : IAuthorizationService
 
         authorization.Status =
             (byte)RequestStatus.ReSubmitted;
+        authorization.SubmittedAt =
+            DateTime.UtcNow;
 
         authorization.UpdatedAt =
             DateTime.UtcNow;
@@ -471,47 +495,51 @@ public class AuthorizationRequestService : IAuthorizationService
             .ToListAsync();
     }
     public async Task<List<AuthorizationTatResponse>>
-        GetTatPriorityQueueAsync(int facilityId)
+    GetTatPriorityQueueAsync(
+        int facilityId)
     {
-        var today = DateTime.UtcNow.Date;
+        var today =
+            DateTime.UtcNow.Date;
 
         var authRequests =
-    await (
-        from auth in _context.AuthorizationRequests
+            await (
+                from auth in _context.AuthorizationRequests
 
-        join payer in _context.Payers
-            on auth.PayerId equals payer.PayerId
+                join payer in _context.Payers
+                    on auth.PayerId equals payer.PayerId
 
-        join encounter in _context.Encounters
-            on auth.EncounterId equals encounter.EncounterId
+                join encounter in _context.Encounters
+                    on auth.EncounterId equals encounter.EncounterId
 
-        where encounter.FacilityId == facilityId
+                where encounter.FacilityId ==
+                      facilityId
 
-        where auth.SubmittedAt != null
+                where auth.Status ==
+                        (byte)RequestStatus.Submitted
+                    || auth.Status ==
+                        (byte)RequestStatus.ReSubmitted
 
-        where auth.Status != (byte)RequestStatus.Approved
-           && auth.Status != (byte)RequestStatus.Denied
-           && auth.Status != (byte)RequestStatus.Expired
+                select new
+                {
+                    auth.AuthId,
 
-        select new
-        {
-            auth.AuthId,
+                    payer.PayerName,
 
-            payer.PayerName,
+                    auth.Priority,
 
-            auth.Priority,
+                    auth.Status,
 
-            SubmittedAt =
-                auth.SubmittedAt!.Value,
+                    SubmittedAt =
+                        auth.SubmittedAt!.Value,
 
-            TatDays =
-                auth.Priority ==
-                (byte)Priority.Normal
-                    ? payer.NormalTatDays
-                    : payer.UrgentTatDays
-        }
-    )
-    .ToListAsync();
+                    TatDays =
+                        auth.Priority ==
+                        (byte)Priority.Normal
+                            ? payer.NormalTatDays
+                            : payer.UrgentTatDays
+                }
+            )
+            .ToListAsync();
 
         var result =
             authRequests
@@ -519,7 +547,7 @@ public class AuthorizationRequestService : IAuthorizationService
             {
                 var expectedReviewDate =
                     x.SubmittedAt.Date
-                    .AddDays(x.TatDays);
+                        .AddDays(x.TatDays);
 
                 var daysLeft =
                     (expectedReviewDate - today).Days;
@@ -529,45 +557,158 @@ public class AuthorizationRequestService : IAuthorizationService
                 if (daysLeft < 0)
                 {
                     tatStatus =
-                        $"Overdue by {Math.Abs(daysLeft)} day(s)";
+                        "Review SLA Exceeded";
                 }
                 else if (daysLeft == 0)
                 {
-                    tatStatus = "Due Today";
+                    tatStatus =
+                        "Review Deadline Reached";
                 }
-                else if (daysLeft <= 2)
+                else if (daysLeft <= 3)
                 {
                     tatStatus =
-                        $"Due in {daysLeft} day(s)";
+                        "Review Deadline Approaching";
                 }
                 else
                 {
-                    tatStatus = "Within TAT";
+                    tatStatus =
+                        "Within Review Timeline";
                 }
 
                 return new AuthorizationTatResponse
                 {
-                    AuthId = x.AuthId,
+                    AuthId =
+                        x.AuthId,
 
-                    PayerName = x.PayerName,
+                    PayerName =
+                        x.PayerName,
 
-                    Priority = x.Priority,
+                    Priority =
+                        x.Priority,
 
-                    SubmittedAt = x.SubmittedAt,
+                    SubmittedAt =
+                        x.SubmittedAt,
 
-                    TatDays = x.TatDays,
+                    TatDays =
+                        x.TatDays,
 
                     ExpectedReviewDate =
                         expectedReviewDate,
 
-                    DaysLeft = daysLeft,
+                    DaysLeft =
+                        daysLeft,
 
-                    TatStatus = tatStatus
+                    TatStatus =
+                        tatStatus
                 };
             })
             .OrderBy(x => x.DaysLeft)
             .ToList();
 
         return result;
+    }
+    public async Task<List<AuthorizationListItemDto>>
+    GetAuthorizationsAsync(
+        RequestStatus? status)
+    {
+        var query =
+            _context.AuthorizationRequests
+                .AsNoTracking()
+                .Include(a => a.Payer)
+                .Include(a => a.Encounter)
+                    .ThenInclude(e => e.Patient)
+                .AsQueryable();
+
+        if (status.HasValue)
+        {
+            query =
+                query.Where(a =>
+                    a.Status ==
+                    (byte)status.Value);
+        }
+
+        return await query
+            .OrderByDescending(a =>
+                a.CreatedAt)
+            .Select(a =>
+                new AuthorizationListItemDto
+                {
+                    AuthId =
+                        a.AuthId,
+
+                    PatientName =
+                        a.Encounter.Patient.FullName,
+
+                    PayerName =
+                        a.Payer.PayerName,
+
+                    Status =
+                        ((RequestStatus)a.Status)
+                            .ToString(),
+
+                    Priority =
+                        ((Priority)a.Priority)
+                            .ToString(),
+
+                    EstimatedAmount =
+                        a.EstimatedTotalAmount,
+
+                    CreatedAt =
+                        a.CreatedAt,
+
+                    SubmittedAt =
+                        a.SubmittedAt
+                })
+            .ToListAsync();
+    }
+    public async Task<List<AuthorizationListItemDto>>
+GetAwaitingReviewAuthorizationsAsync()
+    {
+        await _reminderService
+            .GenerateTatRemindersAsync();
+
+        return await _context.AuthorizationRequests
+            .AsNoTracking()
+            .Include(a => a.Payer)
+            .Include(a => a.Encounter)
+                .ThenInclude(e => e.Patient)
+            .Where(a =>
+                a.Status ==
+                    (byte)RequestStatus.Submitted
+                ||
+                a.Status ==
+                    (byte)RequestStatus.ReSubmitted)
+            .OrderByDescending(a =>
+                a.SubmittedAt)
+            .Select(a =>
+                new AuthorizationListItemDto
+                {
+                    AuthId =
+                        a.AuthId,
+
+                    PatientName =
+                        a.Encounter.Patient.FullName,
+
+                    PayerName =
+                        a.Payer.PayerName,
+
+                    Status =
+                        ((RequestStatus)a.Status)
+                            .ToString(),
+
+                    Priority =
+                        ((Priority)a.Priority)
+                            .ToString(),
+
+                    EstimatedAmount =
+                        a.EstimatedTotalAmount,
+
+                    CreatedAt =
+                        a.CreatedAt,
+
+                    SubmittedAt =
+                        a.SubmittedAt
+                })
+            .ToListAsync();
     }
 }

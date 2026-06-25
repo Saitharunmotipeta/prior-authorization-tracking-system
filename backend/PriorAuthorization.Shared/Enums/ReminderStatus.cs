@@ -2,7 +2,7 @@
 
 public enum ReminderStatus : byte
 {
-    Requested = 1,
+   Pending = 1,
     Scheduled = 2,
     Completed = 3,
     Cancelled = 4
