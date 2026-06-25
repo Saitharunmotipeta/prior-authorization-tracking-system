@@ -23,7 +23,8 @@ import type {
 } from "../types/authorization.interface";
 
 import type {
-  AddAuthorizationServiceRequest
+  AddAuthorizationServiceRequest,
+  AddAuthorizationServiceListRequest
 } from "../types/authorization-service.interface";
 
 export const getFacilities = async () => {
@@ -131,16 +132,17 @@ export const verifyEncounter = async (
     return response.data;
   };
 
-  export const addAuthorizationService =
-  async (
+export const addAuthorizationService =
+async (
     authorizationRequestId: number,
-    request: AddAuthorizationServiceRequest
-  ) => {
+    request: AddAuthorizationServiceListRequest
+) => {
+
     const response =
-      await specialistApiClient.post(
-        `/api/Authorization/${authorizationRequestId}/services`,
-        request
-      );
+        await specialistApiClient.post(
+            `/api/Authorization/${authorizationRequestId}/services`,
+            request
+        );
 
     return response.data;
-  };
+};

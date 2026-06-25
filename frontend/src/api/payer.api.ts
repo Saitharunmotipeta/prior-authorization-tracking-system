@@ -1,4 +1,4 @@
-import { payerApiClient } from "./axios";
+import { payerApiClient,specialistApiClient } from "./axios";
 
 import type {
   ApiResponse,
@@ -72,3 +72,16 @@ export const getAuthorizationDetails =
 
     return response.data;
   };
+
+  export const submitAuthorization =
+async (
+    authId: number
+) => {
+
+    const response =
+        await specialistApiClient.patch(
+            `/api/Authorization/${authId}/submit`
+        );
+
+    return response.data;
+};
