@@ -1,33 +1,33 @@
-import { createRouter, createWebHistory } from "vue-router";
+import {
+  createRouter,
+  createWebHistory
+} from "vue-router";
 
-import managerRoutes from "./manager.routes";
-import { specialistRoutes } from "./specialist.routes";
+import managerRoutes
+from "./manager.routes";
 
-// ✅ Use alias (BEST PRACTICE)
-import PayerLayout from "../layouts/Payer/MainLayout.vue";
+import {
+  specialistRoutes
+} from "./specialist.routes";
 
-const routes = [
-  // ✅ Existing routes
-  ...managerRoutes,
-  ...specialistRoutes,
+import {
+  payerRoutes
+} from "./payer.routes";
 
-  // ✅ Payer routes
-  {
-  path: '/payer',
-  component: PayerLayout,
-  children: [
-    {
-      path: '',
-      component: () => import('../pages/Payer/Dashboard.vue'),
-    }
-  ]
-}
+const router =
+  createRouter({
+    history:
+      createWebHistory(),
 
-];
+    routes: [
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-});
+      ...managerRoutes,
+
+      ...specialistRoutes,
+
+      ...payerRoutes
+
+    ]
+  });
 
 export default router;

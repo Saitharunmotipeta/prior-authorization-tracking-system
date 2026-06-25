@@ -94,6 +94,7 @@ public class AuthorizationController : ControllerBase
                 string.Empty,
                 "Authorization request submitted successfully."));
     }
+
     [HttpPatch("{authId}/resubmit")]
     public async Task<IActionResult> ResubmitAuthorization(
     int authId,
