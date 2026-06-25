@@ -1,4 +1,4 @@
-import { specialistApiClient } from "./axios";
+import { payerApiClient, specialistApiClient } from "./axios";
 
 import type {
   ApiResponse,
@@ -160,6 +160,16 @@ export const verifyEncounter = async (
     const response =
       await specialistApiClient.get(
         "/api/icd-codes"
+      );
+
+    return response.data;
+  };
+  export const getPayers =
+  async () => {
+
+    const response =
+      await payerApiClient.get(
+        "/api/payers"
       );
 
     return response.data;
