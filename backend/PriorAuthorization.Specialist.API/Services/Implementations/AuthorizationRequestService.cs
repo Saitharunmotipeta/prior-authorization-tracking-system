@@ -5,6 +5,7 @@ using PriorAuthorization.Shared.Enums;
 using PriorAuthorization.Shared.Exceptions;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
+using System.Text.Json;
 
 namespace PriorAuthorization.Specialist.API.Services.Implementations;
 
@@ -169,6 +170,7 @@ public class AuthorizationRequestService : IAuthorizationService
             throw new ConflictException(
                 "Services can only be modified in Draft status.");
         }
+        decimal oldEstimatedAmount = authorization.EstimatedTotalAmount;
 
         decimal estimatedTotalAmount = 0;
 
@@ -199,7 +201,7 @@ public class AuthorizationRequestService : IAuthorizationService
             estimatedTotalAmount +=
                 cpt.EstimatedCost;
 
-        _context.AuthorizationServices.Add(
+            _context.AuthorizationServices.Add(
             new AuthorizationService
             {
                 AuthId = authId,
@@ -240,6 +242,18 @@ public class AuthorizationRequestService : IAuthorizationService
         authorization.UpdatedAt =
             DateTime.UtcNow;
 
+        var oldValue = JsonSerializer.Serialize(
+            new
+            {
+                EstimatedTotalAmount = oldEstimatedAmount
+            });
+
+        var newValue = JsonSerializer.Serialize(
+            new
+            {
+                EstimatedTotalAmount = authorization.EstimatedTotalAmount
+            });
+
         _context.AuditHistories.Add(
             new AuditHistory
             {
@@ -254,6 +268,10 @@ public class AuthorizationRequestService : IAuthorizationService
                 ActionType =
                     (byte)AuditActionType.Updated,
 
+                OldValue = oldValue,
+
+                NewValue = newValue,
+
                 PerformedByRole =
                     (byte)UserRole.Specialist,
 
@@ -265,6 +283,7 @@ public class AuthorizationRequestService : IAuthorizationService
             });
 
         await _context.SaveChangesAsync();
+
         return authorization.EstimatedTotalAmount;
     }
     public async Task<List<AuthorizationServiceResponseDto>>
