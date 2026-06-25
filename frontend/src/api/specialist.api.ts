@@ -144,3 +144,23 @@ export const verifyEncounter = async (
 
     return response.data;
   };
+  export const getCptCodes =
+  async () => {
+
+    const response =
+      await specialistApiClient.get(
+        "/api/cptcodes"
+      );
+
+    return response.data;
+  };
+  export const getIcdCodes =
+  async () => {
+
+    const response =
+      await specialistApiClient.get(
+        "/api/icdcodes"
+      );
+
+    return response.data;
+  };
