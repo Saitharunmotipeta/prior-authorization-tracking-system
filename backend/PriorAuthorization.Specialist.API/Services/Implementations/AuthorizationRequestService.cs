@@ -148,9 +148,9 @@ public class AuthorizationRequestService : IAuthorizationService
             throw;
         }
     }
-    public async Task AddServiceAsync(
-    int authId,
-    AddAuthorizationServiceDto dto)
+    public async Task AddServicesAsync(
+        int authId,
+        AddAuthorizationServiceListDto dto)
     {
         var authorization =
             await _context.AuthorizationRequests
@@ -170,63 +170,101 @@ public class AuthorizationRequestService : IAuthorizationService
                 "Services can only be modified in Draft status.");
         }
 
-        var cpt =
-            await _context.Cptcodes
-                .FirstOrDefaultAsync(c =>
-                    c.CptCode1 == dto.CptCode);
+        decimal estimatedTotalAmount = 0;
 
-        if (cpt == null)
+        foreach (var item in dto.Services)
         {
-            throw new NotFoundException(
-                $"CPT Code '{dto.CptCode}' not found.");
-        }
+            var cpt =
+                await _context.Cptcodes
+                    .FirstOrDefaultAsync(c =>
+                        c.CptCode1 == item.CptCode);
 
-        var icdExists =
-            await _context.Icdcodes
-                .AnyAsync(i =>
-                    i.IcdCode1 == dto.IcdCode);
-
-        if (!icdExists)
-        {
-            throw new NotFoundException(
-                $"ICD Code '{dto.IcdCode}' not found.");
-        }
-
-        var service =
-            new AuthorizationService
+            if (cpt == null)
             {
-                AuthId = authId,
+                throw new NotFoundException(
+                    $"CPT Code '{item.CptCode}' not found.");
+            }
 
-                CptCode = dto.CptCode,
+            var icdExists =
+                await _context.Icdcodes
+                    .AnyAsync(i =>
+                        i.IcdCode1 == item.IcdCode);
 
-                IcdCode = dto.IcdCode,
+            if (!icdExists)
+            {
+                throw new NotFoundException(
+                    $"ICD Code '{item.IcdCode}' not found.");
+            }
 
-                EstimatedCost = cpt.EstimatedCost,
+            estimatedTotalAmount +=
+                cpt.EstimatedCost;
 
-                Notes = dto.Notes,
+            _context.AuthorizationServices.Add(
+                new AuthorizationService
+                {
+                    AuthId = authId,
 
-                CreatedAt = DateTime.UtcNow
-            };
+                    CptCode = item.CptCode,
 
-        _context.AuthorizationServices.Add(service);
+                    IcdCode = item.IcdCode,
+
+                    EstimatedCost = cpt.EstimatedCost,
+
+                    Notes = item.Notes,
+
+                    CreatedAt = DateTime.UtcNow
+                });
+
+            _context.AuditHistories.Add(
+                new AuditHistory
+                {
+                    AuthId = authId,
+
+                    EncounterId =
+                        authorization.EncounterId,
+
+                    EntityId =
+                        $"Service-{item.CptCode}",
+
+                    ActionType =
+                        (byte)AuditActionType.Created,
+
+                    PerformedByRole =
+                        (byte)UserRole.Specialist,
+
+                    Remarks =
+                        $"Added service CPT {item.CptCode}",
+
+                    CreatedAt =
+                        DateTime.UtcNow
+                });
+        }
+
+        authorization.EstimatedTotalAmount +=
+            estimatedTotalAmount;
+
+        authorization.UpdatedAt =
+            DateTime.UtcNow;
 
         _context.AuditHistories.Add(
             new AuditHistory
             {
                 AuthId = authId,
 
-                EncounterId = authorization.EncounterId,
+                EncounterId =
+                    authorization.EncounterId,
 
-                EntityId = $"Service-{dto.CptCode}",
+                EntityId =
+                    $"Authorization-{authId}",
 
                 ActionType =
-                    (byte)AuditActionType.Created,
+                    (byte)AuditActionType.Updated,
 
                 PerformedByRole =
                     (byte)UserRole.Specialist,
 
                 Remarks =
-                    $"Added service CPT {dto.CptCode}",
+                    $"Added {dto.Services.Count} service(s). Estimated Amount Increased By ₹{estimatedTotalAmount}",
 
                 CreatedAt =
                     DateTime.UtcNow
