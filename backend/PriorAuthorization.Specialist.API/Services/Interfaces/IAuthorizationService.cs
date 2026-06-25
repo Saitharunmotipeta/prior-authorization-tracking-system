@@ -1,4 +1,5 @@
 ﻿using PriorAuthorization.Shared.Entities;
+using PriorAuthorization.Shared.Enums;
 using PriorAuthorization.Specialist.API.DTOs;
 
 namespace PriorAuthorization.Specialist.API.Services.Interfaces;
@@ -30,5 +31,11 @@ public interface IAuthorizationService
 
     Task<List<AuthorizationTatResponse>>
         GetTatPriorityQueueAsync(int facilityId);
+    Task<List<AuthorizationListItemDto>>
+    GetAuthorizationsAsync(
+        RequestStatus? status);
+
+    Task<List<AuthorizationListItemDto>>
+        GetAwaitingReviewAuthorizationsAsync();
 
 }

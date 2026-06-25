@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PriorAuthorization.Shared.Common;
 using PriorAuthorization.Shared.Entities;
+using PriorAuthorization.Shared.Enums;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
 
@@ -133,5 +134,38 @@ public class AuthorizationController : ControllerBase
                     facilityId);
 
         return Ok(result);
+    }
+    [HttpGet]
+    public async Task<IActionResult>
+    GetAuthorizations(
+        [FromQuery]
+        RequestStatus? status)
+    {
+        var result =
+            await _authorizationService
+                .GetAuthorizationsAsync(
+                    status);
+
+        return Ok(
+            ApiResponse<
+                List<AuthorizationListItemDto>>
+                .SuccessResponse(
+                    result,
+                    "Authorizations retrieved successfully."));
+    }
+    [HttpGet("awaiting-review")]
+    public async Task<IActionResult>
+    GetAwaitingReview()
+    {
+        var result =
+            await _authorizationService
+                .GetAwaitingReviewAuthorizationsAsync();
+
+        return Ok(
+            ApiResponse<
+                List<AuthorizationListItemDto>>
+                .SuccessResponse(
+                    result,
+                    "Awaiting review authorizations retrieved successfully."));
     }
 }
