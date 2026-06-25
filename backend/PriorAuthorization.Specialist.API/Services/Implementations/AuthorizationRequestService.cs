@@ -148,9 +148,9 @@ public class AuthorizationRequestService : IAuthorizationService
             throw;
         }
     }
-    public async Task AddServicesAsync(
+    public async Task<decimal> AddServicesAsync(
         int authId,
-        AddAuthorizationServiceListDto dto)
+        AddAuthorizationServiceDto dto)
     {
         var authorization =
             await _context.AuthorizationRequests
@@ -199,45 +199,39 @@ public class AuthorizationRequestService : IAuthorizationService
             estimatedTotalAmount +=
                 cpt.EstimatedCost;
 
-            _context.AuthorizationServices.Add(
-                new AuthorizationService
-                {
-                    AuthId = authId,
+        _context.AuthorizationServices.Add(
+            new AuthorizationService
+            {
+                AuthId = authId,
 
-                    CptCode = item.CptCode,
+                CptCode = item.CptCode,
 
-                    IcdCode = item.IcdCode,
+                IcdCode = item.IcdCode,
 
-                    EstimatedCost = cpt.EstimatedCost,
+                EstimatedCost = cpt.EstimatedCost,
 
-                    Notes = item.Notes,
+                Notes = item.Notes,
 
-                    CreatedAt = DateTime.UtcNow
-                });
+                CreatedAt = DateTime.UtcNow
+            });
 
-            _context.AuditHistories.Add(
-                new AuditHistory
-                {
-                    AuthId = authId,
+        _context.AuditHistories.Add(
+            new AuditHistory
+            {
+                AuthId = authId,
 
-                    EncounterId =
-                        authorization.EncounterId,
+                EncounterId = authorization.EncounterId,
 
-                    EntityId =
-                        $"Service-{item.CptCode}",
+                EntityId = $"Service-{item.CptCode}",
 
-                    ActionType =
-                        (byte)AuditActionType.Created,
+                ActionType = (byte)AuditActionType.Created,
 
-                    PerformedByRole =
-                        (byte)UserRole.Specialist,
+                PerformedByRole = (byte)UserRole.Specialist,
 
-                    Remarks =
-                        $"Added service CPT {item.CptCode}",
+                Remarks = $"Added service CPT {item.CptCode}",
 
-                    CreatedAt =
-                        DateTime.UtcNow
-                });
+                CreatedAt = DateTime.UtcNow
+            });
         }
 
         authorization.EstimatedTotalAmount +=
@@ -271,6 +265,7 @@ public class AuthorizationRequestService : IAuthorizationService
             });
 
         await _context.SaveChangesAsync();
+        return authorization.EstimatedTotalAmount;
     }
     public async Task<List<AuthorizationServiceResponseDto>>
     GetServicesAsync(int authId)

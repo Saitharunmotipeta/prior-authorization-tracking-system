@@ -50,6 +50,23 @@ export const useSpecialistStore =
       }),
 
       actions: {
+        async resetWorkflow() {
+  this.selectedFacilityId =
+    null;
+
+  this.selectedDepartmentId =
+    null;
+
+  this.mrnNumber = "";
+
+  this.patientLookup =
+    null;
+
+  this.eligibilityResult =
+    null;
+
+  this.error = null;
+},
         async loadFacilities() {
           try {
             this.loading = true;
