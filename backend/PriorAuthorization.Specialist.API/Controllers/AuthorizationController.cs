@@ -38,30 +38,34 @@ public class AuthorizationController : ControllerBase
         int authId,
         AddAuthorizationServiceListDto dto)
     {
-        await _authorizationService
-            .AddServicesAsync(authId, dto);
+        var total =
+            await _authorizationService
+                .AddServicesAsync(
+                    authId,
+                    dto);
 
         return Ok(
-            ApiResponse<string>.SuccessResponse(
-                string.Empty,
-                "Services added successfully."));
+            ApiResponse<decimal>
+                .SuccessResponse(
+                    total,
+                    "Services added successfully."));
     }
 
     [HttpDelete("{authId}/services/{serviceId}")]
-    public async Task<IActionResult> RemoveService(
-        int authId,
-        int serviceId)
-    {
-        await _authorizationService
-            .RemoveServiceAsync(
-                authId,
-                serviceId);
+        public async Task<IActionResult> RemoveService(
+            int authId,
+            int serviceId)
+        {
+            await _authorizationService
+                .RemoveServiceAsync(
+                    authId,
+                    serviceId);
 
-        return Ok(
-            ApiResponse<string>.SuccessResponse(
-                string.Empty,
-                "Service removed successfully."));
-    }
+            return Ok(
+                ApiResponse<string>.SuccessResponse(
+                    string.Empty,
+                    "Service removed successfully."));
+        }
 
     [HttpGet("{authId}/services")]
     public async Task<IActionResult> GetServices(

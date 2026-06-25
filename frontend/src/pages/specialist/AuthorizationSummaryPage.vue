@@ -24,6 +24,14 @@ import {
   useEncounterStore
 } from "../../stores/encounter.store";
 
+import {
+  useSpecialistStore
+} from "../../stores/specialist.store";
+
+import {
+  useDocumentVerificationStore
+} from "../../stores/documentVerification.store";
+
 const router = useRouter();
 
 const authorizationStore =
@@ -32,23 +40,42 @@ const authorizationStore =
 const encounterStore =
   useEncounterStore();
 
+const specialistStore =
+  useSpecialistStore();
+
+const documentStore =
+  useDocumentVerificationStore();
+
 const {
   authorizationRequestId,
   payerId,
   priority,
   services,
   requestStatus,
-  error
+  error,
+  estimatedTotalAmount
 } =
   storeToRefs(
     authorizationStore
   );
+  console.log(estimatedTotalAmount);
 
 const submitAuthorization =
   () => {
-    console.log(
-      "Authorization Submitted"
-    );
+
+    specialistStore
+      .resetWorkflow();
+
+    encounterStore
+      .resetEncounter();
+
+    documentStore
+      .resetDocuments();
+
+    authorizationStore
+      .resetAuthorization();
+
+     localStorage.clear();
 
     router.push(
       "/specialist/eligibility"
@@ -161,9 +188,9 @@ const submitAuthorization =
             Status
           </span>
 
-          <strong>
-            Draft
-          </strong>
+          <AppStatusBadge
+  :status="requestStatus"
+/>
         </div>
 
         <div class="detail-row">
@@ -172,8 +199,11 @@ const submitAuthorization =
           </span>
 
           <strong>
-            ₹ 0
-          </strong>
+  ₹ {{
+    estimatedTotalAmount
+      .toLocaleString()
+  }}
+</strong>
         </div>
 
         <div class="detail-row">

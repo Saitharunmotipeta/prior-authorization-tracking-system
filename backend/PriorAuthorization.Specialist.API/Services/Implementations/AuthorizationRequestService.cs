@@ -5,6 +5,7 @@ using PriorAuthorization.Shared.Enums;
 using PriorAuthorization.Shared.Exceptions;
 using PriorAuthorization.Specialist.API.DTOs;
 using PriorAuthorization.Specialist.API.Services.Interfaces;
+using System.Text.Json;
 
 namespace PriorAuthorization.Specialist.API.Services.Implementations;
 
@@ -148,8 +149,8 @@ public class AuthorizationRequestService : IAuthorizationService
             throw;
         }
     }
-    public async Task AddServicesAsync(
-    int authId,
+    public async Task<decimal> AddServicesAsync(
+        int authId,
         AddAuthorizationServiceListDto dto)
     {
         var authorization =
@@ -169,6 +170,7 @@ public class AuthorizationRequestService : IAuthorizationService
             throw new ConflictException(
                 "Services can only be modified in Draft status.");
         }
+        decimal oldEstimatedAmount = authorization.EstimatedTotalAmount;
 
         var cpt =
             await _context.Cptcodes
@@ -192,23 +194,24 @@ public class AuthorizationRequestService : IAuthorizationService
                 $"ICD Code '{dto.IcdCode}' not found.");
         }
 
-        var service =
-            new AuthorizationService
-            {
-                AuthId = authId,
+            estimatedTotalAmount +=
+                cpt.EstimatedCost;
 
-                CptCode = dto.CptCode,
+            _context.AuthorizationServices.Add(
+                new AuthorizationService
+                {
+                    AuthId = authId,
 
-                IcdCode = dto.IcdCode,
+                    CptCode = item.CptCode,
+
+                    IcdCode = item.IcdCode,
 
                 EstimatedCost = cpt.EstimatedCost,
 
-                Notes = dto.Notes,
+                    Notes = item.Notes,
 
-                CreatedAt = DateTime.UtcNow
-            };
-
-        _context.AuthorizationServices.Add(service);
+                    CreatedAt = DateTime.UtcNow
+                });
 
         _context.AuditHistories.Add(
             new AuditHistory
@@ -217,22 +220,56 @@ public class AuthorizationRequestService : IAuthorizationService
 
                 EncounterId = authorization.EncounterId,
 
-                EntityId = $"Service-{dto.CptCode}",
+                    EntityId =
+                        $"Service-{item.CptCode}",
+
+                    ActionType =
+                        (byte)AuditActionType.Created,
+
+                    PerformedByRole =
+                        (byte)UserRole.Specialist,
+
+                    Remarks =
+                        $"Added service CPT {item.CptCode}",
+
+                    CreatedAt =
+                        DateTime.UtcNow
+                });
+        }
+
+        authorization.EstimatedTotalAmount +=
+            estimatedTotalAmount;
+
+        authorization.UpdatedAt =
+            DateTime.UtcNow;
+
+        _context.AuditHistories.Add(
+            new AuditHistory
+            {
+                AuthId = authId,
+
+                EncounterId =
+                    authorization.EncounterId,
+
+                EntityId =
+                    $"Authorization-{authId}",
 
                 ActionType =
-                    (byte)AuditActionType.Created,
+                    (byte)AuditActionType.Updated,
 
                 PerformedByRole =
                     (byte)UserRole.Specialist,
 
                 Remarks =
-                    $"Added service CPT {dto.CptCode}",
+                    $"Added {dto.Services.Count} service(s). Estimated Amount Increased By ₹{estimatedTotalAmount}",
 
                 CreatedAt =
                     DateTime.UtcNow
             });
 
         await _context.SaveChangesAsync();
+
+        return authorization.EstimatedTotalAmount;
     }
     public async Task<List<AuthorizationServiceResponseDto>>
     GetServicesAsync(int authId)
