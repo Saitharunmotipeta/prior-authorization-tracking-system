@@ -24,6 +24,9 @@ from "../pages/specialist/AddAuthorizationServicesPage.vue";
 import AuthorizationSummaryPage
 from "../pages/specialist/AuthorizationSummaryPage.vue";
 
+import SpecialistRequestsPage
+from "@/pages/specialist/SpecialistRequestsPage.vue";
+
 export const specialistRoutes:
   RouteRecordRaw[] = [
   {
@@ -107,6 +110,11 @@ export const specialistRoutes:
 
         component:
           AuthorizationSummaryPage
+      },
+      {
+        path: "requests",
+        component:
+          SpecialistRequestsPage
       }
     ]
   }

@@ -29,6 +29,16 @@ export interface EligibilityResult {
   policyExpiryDate: string;
 }
 
+export interface AuthorizationRequest {
+  authId: number;
+  patientName: string;
+  payerName: string;
+  status: string;
+  priority: string;
+  estimatedAmount: number;
+  createdAt: string;
+  submittedAt: string | null;
+}
 export interface CptCode {
   cptCode: string;
   cptDescription: string;

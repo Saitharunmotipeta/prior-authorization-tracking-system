@@ -4,7 +4,8 @@ import {
   getFacilities,
   getDepartments,
   lookupPatient,
-  verifyEligibility
+  verifyEligibility,
+  getAuthorizationRequests
 } from "../api/specialist.api";
 
 import {
@@ -15,7 +16,8 @@ import type {
   Facility,
   Department,
   PatientLookup,
-  EligibilityResult
+  EligibilityResult,
+  AuthorizationRequest
 } from "../types/specialist.interface";
 
 export const useSpecialistStore =
@@ -28,6 +30,9 @@ export const useSpecialistStore =
         facilities: [] as Facility[],
 
         departments: [] as Department[],
+
+        authorizationRequests:
+  [] as AuthorizationRequest[],
 
         selectedFacilityId:
           null as number | null,
@@ -194,6 +199,28 @@ export const useSpecialistStore =
             this.loading = false;
           }
         },
+
+      async loadAuthorizationRequests() {
+        try {
+          this.loading = true;
+          this.error = null;
+
+          const response =
+            await getAuthorizationRequests();
+
+          this.authorizationRequests =
+            response.data;
+        }
+        catch (error) {
+          console.error(error);
+
+          this.error =
+            getErrorMessage(error);
+        }
+        finally {
+          this.loading = false;
+        }
+      }, 
 
         clearError() {
           this.error = null;
