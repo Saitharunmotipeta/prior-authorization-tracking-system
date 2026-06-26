@@ -61,26 +61,39 @@ const {
   console.log(estimatedTotalAmount);
 
 const submitAuthorization =
-  () => {
+async () => {
 
-    specialistStore
-      .resetWorkflow();
+    try {
 
-    encounterStore
-      .resetEncounter();
+        await authorizationStore
+            .submitAuthorizationRequest();
 
-    documentStore
-      .resetDocuments();
+        specialistStore
+            .resetWorkflow();
 
-    authorizationStore
-      .resetAuthorization();
+        encounterStore
+            .resetEncounter();
 
-     localStorage.clear();
+        documentStore
+            .resetDocuments();
 
-    router.push(
-      "/specialist/eligibility"
-    );
-  };
+        authorizationStore
+            .resetAuthorization();
+
+        localStorage.clear();
+
+        router.push(
+            "/specialist/eligibility"
+        );
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+};
 </script>
 
 <template>

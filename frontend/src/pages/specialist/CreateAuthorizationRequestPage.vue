@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { onMounted } from "vue";
 
 import { useRouter } from "vue-router";
 
@@ -24,7 +25,9 @@ import {
 import {
   useAuthorizationStore
 } from "../../stores/authorization.store";
-
+import {
+  getPayers
+} from "../../api/specialist.api.ts";
 const router = useRouter();
 
 const encounterStore =
@@ -42,12 +45,29 @@ const {
     authorizationStore
   );
 
+const payers =
+  ref<any[]>([]);
 const payerId =
   ref(0);
 
 const priority =
   ref(0);
+onMounted(
+  async () => {
 
+    console.log("Loading payers...");
+
+    const response =
+      await getPayers();
+
+    console.log("Payer response:", response);
+
+    payers.value =
+      response;
+
+    console.log("Payers:", payers.value);
+  }
+);
 const createAuthorization =
   async () => {
     try {
@@ -148,15 +168,33 @@ const createAuthorization =
 
         </label>
 
-        <input
-          v-model.number="
-            payerId
-          "
-          type="number"
-          placeholder="
-            Enter Payer Id
-          "
-        />
+        <select
+  v-model="payerId"
+>
+
+  <option
+  disabled
+  :value="0"
+>
+  Select Payer
+</option>
+
+  <option
+    v-for="
+      payer
+      in payers
+    "
+    :key="
+      payer.payerId
+    "
+    :value="
+      payer.payerId
+    "
+  >
+    {{ payer.payerName }}
+  </option>
+
+</select>
 
       </div>
 

@@ -217,23 +217,23 @@ public class AuthorizationRequestService : IAuthorizationService
                 CreatedAt = DateTime.UtcNow
             });
 
-        _context.AuditHistories.Add(
-            new AuditHistory
-            {
-                AuthId = authId,
+            _context.AuditHistories.Add(
+                new AuditHistory
+                {
+                    AuthId = authId,
 
-                EncounterId = authorization.EncounterId,
+                    EncounterId = authorization.EncounterId,
 
-                EntityId = $"Service-{item.CptCode}",
+                    EntityId = $"Service-{item.CptCode}",
 
-                ActionType = (byte)AuditActionType.Created,
+                    ActionType = (byte)AuditActionType.Created,
 
-                PerformedByRole = (byte)UserRole.Specialist,
+                    PerformedByRole = (byte)UserRole.Specialist,
 
-                Remarks = $"Added service CPT {item.CptCode}",
+                    Remarks = $"Added service CPT {item.CptCode}",
 
-                CreatedAt = DateTime.UtcNow
-            });
+                    CreatedAt = DateTime.UtcNow
+                });
         }
 
         authorization.EstimatedTotalAmount +=

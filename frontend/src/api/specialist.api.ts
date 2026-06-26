@@ -1,6 +1,7 @@
 import {
   specialistApiClient,
-  managerApiClient
+  managerApiClient,
+  payerApiClient
 } from "./axios";
 
 import type {
@@ -9,7 +10,9 @@ import type {
   Department,
   PatientLookup,
   EligibilityResult,
-  AuthorizationRequest
+  AuthorizationRequest, 
+  CptCode,
+  IcdCode
 } from "../types/specialist.interface";
 
 import type {
@@ -21,7 +24,8 @@ import type {
 } from "../types/authorization.interface";
 
 import type {
-  AddAuthorizationServiceRequest
+  AddAuthorizationServiceRequest,
+  AddAuthorizationServiceListRequest
 } from "../types/authorization-service.interface";
 
 import type {
@@ -133,15 +137,46 @@ export const verifyEncounter = async (
     return response.data;
   };
 
-  export const addAuthorizationService =
-  async (
+export const addAuthorizationService =
+async (
     authorizationRequestId: number,
-    request: AddAuthorizationServiceRequest
-  ) => {
+    request: AddAuthorizationServiceListRequest
+) => {
+
     const response =
-      await specialistApiClient.post(
-        `/api/Authorization/${authorizationRequestId}/services`,
-        request
+        await specialistApiClient.post(
+            `/api/Authorization/${authorizationRequestId}/services`,
+            request
+        );
+
+    return response.data;
+  };
+  export const getCptCodes =
+  async () => {
+
+    const response =
+      await specialistApiClient.get(
+        "/api/cptcodes"
+      );
+
+    return response.data;
+  };
+  export const getIcdCodes =
+  async () => {
+
+    const response =
+      await specialistApiClient.get(
+        "/api/icd-codes"
+      );
+
+    return response.data;
+  };
+  export const getPayers =
+  async () => {
+
+    const response =
+      await payerApiClient.get(
+        "/api/payers"
       );
 
     return response.data;
