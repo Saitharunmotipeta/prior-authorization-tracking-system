@@ -54,7 +54,7 @@ export const useAuthorizationStore =
 
       actions: {
 
-async submitAuthorizationRequest() {
+async uploadServices() {
 
     try {
 
@@ -71,23 +71,50 @@ async submitAuthorizationRequest() {
         }
 
         const response =
-          await addAuthorizationService(
-              this.authorizationRequestId,
-              {
-                  services: this.services
-              }
-          );
+            await addAuthorizationService(
+                this.authorizationRequestId,
+                {
+                    services: this.services
+                }
+            );
 
-      console.log("API Response", response);
-      console.log("Amount", response.data);
+        this.estimatedTotalAmount =
+            response.data;
 
-      this.estimatedTotalAmount =
-          response.data;
+    }
+    catch (error) {
 
-      console.log(
-          "Store Amount",
-          this.estimatedTotalAmount
-      );
+        console.error(error);
+
+        this.error =
+            getErrorMessage(error);
+
+        throw error;
+
+    }
+    finally {
+
+        this.loading = false;
+
+    }
+
+},
+
+async submitAuthorizationRequest() {
+
+    try {
+
+        this.loading = true;
+
+        this.error = null;
+
+        if (this.authorizationRequestId === null) {
+
+            throw new Error(
+                "Authorization Request Id not found."
+            );
+
+        }
 
         await submitAuthorization(
             this.authorizationRequestId

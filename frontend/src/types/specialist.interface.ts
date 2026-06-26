@@ -28,3 +28,13 @@ export interface EligibilityResult {
   message: string;
   policyExpiryDate: string;
 }
+
+export interface CptCode {
+  cptCode: string;
+  cptDescription: string;
+}
+
+export interface IcdCode {
+  icdCode: string;
+  icdDescription: string;
+}
