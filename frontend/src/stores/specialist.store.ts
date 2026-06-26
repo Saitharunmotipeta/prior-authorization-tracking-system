@@ -4,7 +4,10 @@ import {
   getFacilities,
   getDepartments,
   lookupPatient,
-  verifyEligibility
+  verifyEligibility,
+  getAuthorizationRequests,
+  getAuthorizationServices,
+  getAuthorizationTimeline
 } from "../api/specialist.api";
 
 import {
@@ -15,8 +18,13 @@ import type {
   Facility,
   Department,
   PatientLookup,
-  EligibilityResult
+  EligibilityResult,
+  AuthorizationRequest,
 } from "../types/specialist.interface";
+
+import type {
+AuthorizationTimeline
+} from "../types/authorization.interface";
 
 export const useSpecialistStore =
   defineStore(
@@ -28,6 +36,15 @@ export const useSpecialistStore =
         facilities: [] as Facility[],
 
         departments: [] as Department[],
+
+        authorizationRequests:
+  [] as AuthorizationRequest[],
+
+        authorizationServices:
+          [] as AuthorizationService[],
+
+          authorizationTimeline:
+    [] as AuthorizationTimeline[],
 
         selectedFacilityId:
           null as number | null,
@@ -195,6 +212,85 @@ export const useSpecialistStore =
           }
         },
 
+      async loadAuthorizationRequests() {
+        try {
+          this.loading = true;
+          this.error = null;
+
+          const response =
+            await getAuthorizationRequests();
+
+          this.authorizationRequests =
+            response.data;
+        }
+        catch (error) {
+          console.error(error);
+
+          this.error =
+            getErrorMessage(error);
+        }
+        finally {
+          this.loading = false;
+        }
+      }, 
+      async loadAuthorizationServices(
+        authId: number
+      ) {
+        try {
+          this.loading = true;
+
+          this.error = null;
+
+          const response =
+            await getAuthorizationServices(
+              authId
+            );
+
+          this.authorizationServices =
+            response.data;
+        }
+        catch (error) {
+          console.error(error);
+
+          this.error =
+            getErrorMessage(error);
+        }
+        finally {
+          this.loading = false;
+        }
+      },
+      async loadAuthorizationTimeline(
+        authId: number
+      ) {
+        try {
+
+          this.loading = true;
+
+          this.error = null;
+
+          const response =
+            await getAuthorizationTimeline(
+              authId
+            );
+
+          this.authorizationTimeline =
+            response.data;
+
+        }
+        catch (error) {
+
+          console.error(error);
+
+          this.error =
+            getErrorMessage(error);
+
+        }
+        finally {
+
+          this.loading = false;
+
+        }
+      },
         clearError() {
           this.error = null;
         }

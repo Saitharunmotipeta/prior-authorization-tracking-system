@@ -60,7 +60,7 @@ public class AuthorizationRequestService : IAuthorizationService
 
         if (!payerExists)
         {
-            throw new NotFoundException(
+            new NotFoundException(
                 $"Payer {dto.PayerId} not found.");
         }
 
