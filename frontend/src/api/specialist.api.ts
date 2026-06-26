@@ -1,4 +1,8 @@
-import { payerApiClient, specialistApiClient } from "./axios";
+import {
+  specialistApiClient,
+  managerApiClient,
+  payerApiClient
+} from "./axios";
 
 import type {
   ApiResponse,
@@ -6,25 +10,27 @@ import type {
   Department,
   PatientLookup,
   EligibilityResult,
+  AuthorizationRequest, 
+  CptCode,
+  IcdCode
 } from "../types/specialist.interface";
-
-import type {
-  CreateEncounterRequest,
-  CreateEncounterResponse
-} from "../types/encounter.interface";
 
 import type {
   UpdateEncounterRequest
 } from "../types/documentVerification.interface";
 
 import type {
-  CreateAuthorizationRequest,
-  CreateAuthorizationResponse
+  CreateAuthorizationRequest
 } from "../types/authorization.interface";
 
 import type {
-  AddAuthorizationServiceRequest
+  AddAuthorizationServiceRequest,
+  AddAuthorizationServiceListRequest
 } from "../types/authorization-service.interface";
+
+import type {
+  CreateEncounterRequest
+} from "../types/encounter.interface";
 
 export const getFacilities = async () => {
   const response =
@@ -131,16 +137,17 @@ export const verifyEncounter = async (
     return response.data;
   };
 
-  export const addAuthorizationService =
-  async (
+export const addAuthorizationService =
+async (
     authorizationRequestId: number,
-    request: AddAuthorizationServiceRequest
-  ) => {
+    request: AddAuthorizationServiceListRequest
+) => {
+
     const response =
-      await specialistApiClient.post(
-        `/api/Authorization/${authorizationRequestId}/services`,
-        request
-      );
+        await specialistApiClient.post(
+            `/api/Authorization/${authorizationRequestId}/services`,
+            request
+        );
 
     return response.data;
   };
@@ -174,3 +181,21 @@ export const verifyEncounter = async (
 
     return response.data;
   };
+
+export const getAuthorizationRequests = async (
+  status?: number
+) => {
+  const response =
+    await specialistApiClient.get<
+      ApiResponse<AuthorizationRequest[]>
+    >(
+      "/api/Authorization",
+      {
+        params: {
+          status
+        }
+      }
+    );
+
+  return response.data;
+};
