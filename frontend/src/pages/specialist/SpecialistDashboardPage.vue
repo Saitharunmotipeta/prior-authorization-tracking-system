@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import {
+  onMounted,
+  ref
+} from "vue";
+
 import { RouterLink } from "vue-router";
 
 import {
@@ -7,6 +12,37 @@ import {
   Bell,
   ArrowRight
 } from "lucide-vue-next";
+
+import { getDashboard } from "../../api/manager.api";
+
+import type {
+  DashboardMetrics
+} from "../../types/dashboard.interface";
+
+const dashboard =
+  ref<DashboardMetrics>();
+
+const loading =
+  ref(false);
+
+onMounted(async () => {
+  loading.value = true;
+
+  try
+  {
+    const response =
+      await getDashboard();
+
+    dashboard.value =
+      response.data;
+  }
+
+  finally
+  {
+    loading.value = false;
+  }
+});
+
 </script>
 
 <template>
@@ -38,9 +74,9 @@ import {
           Active Requests
         </h3>
 
-        <span>
-          0
-        </span>
+      <span>
+        {{ dashboard?.totalAuthorizationRequests ?? 0 }}
+      </span>
 
       </div>
 
@@ -50,20 +86,20 @@ import {
           Pending Reviews
         </h3>
 
-        <span>
-          0
-        </span>
+      <span>
+        {{ dashboard?.pendingRequests ?? 0 }}
+      </span>
 
       </div>
 
       <div class="stat-card">
 
         <h3>
-          Approved Today
+          Approved Requests
         </h3>
 
         <span>
-          0
+          {{ dashboard?.approvedRequests ?? 0 }}
         </span>
 
       </div>
@@ -75,7 +111,7 @@ import {
         </h3>
 
         <span>
-          0
+          {{ dashboard?.totalReminders ?? 0 }}
         </span>
 
       </div>

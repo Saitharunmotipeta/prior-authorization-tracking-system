@@ -5,3 +5,7 @@ export interface AddAuthorizationServiceRequest {
 
   notes: string;
 }
+
+export interface AddAuthorizationServiceListRequest {
+    services: AddAuthorizationServiceRequest[];
+}

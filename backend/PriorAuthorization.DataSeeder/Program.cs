@@ -13,6 +13,8 @@ connection.Open();
 
 Console.WriteLine("✅ Database Connected Successfully!");
 
+var payerIds = connection.Query<int>("SELECT payer_id FROM Payer").ToList();
+
 // ✅ STEP 1 — Generate patients
 var patients = PatientGenerator.Generate(200);
 
@@ -77,8 +79,8 @@ WHERE a.encounter_id IS NULL
 ").ToList();
 
 
+var authRequests = AuthorizationRequestGenerator.Generate(encounterIds, payerIds);
 
-var authRequests = AuthorizationRequestGenerator.Generate(encounterIds);
 
 Console.WriteLine($"✅ Generated {authRequests.Count} authorization requests");
 
@@ -155,7 +157,7 @@ SELECT auth_id AS AuthId, status AS Status
 FROM AuthorizationRequest
 ").ToList();
 
-var reminders = ReminderGenerator.Generate(authStatusData);
+var reminders = ReminderGenerator.Generate(authStatusData, payerIds);
 
 Console.WriteLine($"✅ Generated {reminders.Count} reminders");
 
@@ -171,3 +173,25 @@ VALUES
 connection.Execute(reminderSql, reminders);
 
 Console.WriteLine("✅ Reminders inserted!");
+
+// ✅ Get patient IDs (use already generated or DB)
+var newPatientIds = patients.Select(p => p.PatientId).ToList();
+
+
+// ✅ Generate policies
+var policies = PolicyGenerator.Generate(patientIds, payerIds);
+
+
+Console.WriteLine($"✅ Generated {policies.Count} policies");
+
+// ✅ Insert
+var policySql = @"
+INSERT INTO Policy
+(patient_id, payer_id, policy_start_date, policy_expiry_date, is_active)
+VALUES
+(@PatientId, @PayerId, @PolicyStartDate, @PolicyExpiryDate, @IsActive)
+";
+
+connection.Execute(policySql, policies);
+
+Console.WriteLine("✅ Policies inserted!");
