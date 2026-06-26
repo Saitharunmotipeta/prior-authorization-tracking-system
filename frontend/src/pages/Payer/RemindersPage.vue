@@ -69,9 +69,9 @@ onMounted(fetchReminders);
           </span>
         </div>
 
-        <p class="remarks">
-          {{ r.remarks }}
-        </p>
+        <p class="status">
+  Status: <strong>{{ r.status }}</strong>
+</p>
       </div>
 
       <p v-if="reminders.length === 0">
@@ -119,10 +119,13 @@ onMounted(fetchReminders);
   color: #64748b;
 }
 
-.remarks {
+.status {
   margin: 0;
-  color: #475569;
   font-size: 0.95rem;
-  line-height: 1.4;
+  color: #475569;
+}
+
+.status strong {
+  color: #0072ce;
 }
 </style>
