@@ -48,6 +48,8 @@ builder.Services.AddScoped<IEncounterService, EncounterService>();
 builder.Services.AddScoped<IAuthorizationService,AuthorizationRequestService>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddScoped<IICDCodeService, ICDCodeService>();
+builder.Services.AddScoped<ICPTCodeService,
+    CPTCodeService>();
 
 builder.Services.AddModelValidationConfiguration();
 

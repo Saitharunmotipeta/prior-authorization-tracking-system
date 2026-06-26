@@ -6,6 +6,10 @@ import {
 } from "../api/specialist.api";
 
 import {
+    submitAuthorization
+} from "../api/payer.api";
+
+import {
   getErrorMessage
 } from "../utils/error-handler";
 
@@ -18,7 +22,8 @@ import type {
 } from "../types/authorization.interface";
 
 import type {
-  AddAuthorizationServiceRequest
+  AddAuthorizationServiceRequest,
+  AddAuthorizationServiceListRequest
 } from "../types/authorization-service.interface";
 
 export const useAuthorizationStore =
@@ -32,6 +37,7 @@ export const useAuthorizationStore =
           null as number | null,
 
         payerId: 0,
+        estimatedTotalAmount: 0,
 
         priority: 0,
         requestStatus:
@@ -47,6 +53,95 @@ export const useAuthorizationStore =
       }),
 
       actions: {
+
+async uploadServices() {
+
+    try {
+
+        this.loading = true;
+
+        this.error = null;
+
+        if (this.authorizationRequestId === null) {
+
+            throw new Error(
+                "Authorization Request Id not found."
+            );
+
+        }
+
+        const response =
+            await addAuthorizationService(
+                this.authorizationRequestId,
+                {
+                    services: this.services
+                }
+            );
+
+        this.estimatedTotalAmount =
+            response.data;
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        this.error =
+            getErrorMessage(error);
+
+        throw error;
+
+    }
+    finally {
+
+        this.loading = false;
+
+    }
+
+},
+
+async submitAuthorizationRequest() {
+
+    try {
+
+        this.loading = true;
+
+        this.error = null;
+
+        if (this.authorizationRequestId === null) {
+
+            throw new Error(
+                "Authorization Request Id not found."
+            );
+
+        }
+
+        await submitAuthorization(
+            this.authorizationRequestId
+        );
+
+        this.requestStatus =
+            RequestStatus.Submitted;
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        this.error =
+            getErrorMessage(error);
+
+        throw error;
+
+    }
+    finally {
+
+        this.loading = false;
+
+    }
+
+},
+        
         async createAuthorization(
           request:
             CreateAuthorizationRequest
@@ -80,43 +175,12 @@ export const useAuthorizationStore =
         },
 
         async addService(
-          request:
-            AddAuthorizationServiceRequest
-        ) {
-          if (
-            !this.authorizationRequestId
-          ) {
-            throw new Error(
-              "Authorization Request Id not found."
-            );
-          }
+    request: AddAuthorizationServiceRequest
+) {
 
-          try {
-            this.loading = true;
+    this.services.push(request);
 
-            this.error = null;
-
-            await addAuthorizationService(
-              this.authorizationRequestId,
-              request
-            );
-
-            this.services.push(
-              request
-            );
-          }
-          catch (error) {
-            console.error(error);
-
-            this.error =
-              getErrorMessage(error);
-
-            throw error;
-          }
-          finally {
-            this.loading = false;
-          }
-        },
+},
 
         clearError() {
           this.error = null;
@@ -127,6 +191,8 @@ export const useAuthorizationStore =
             null;
 
           this.payerId = 0;
+
+          this.estimatedTotalAmount = 0;
 
           this.priority = 0;
 
