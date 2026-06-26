@@ -1,4 +1,7 @@
-import { specialistApiClient } from "./axios";
+import {
+  specialistApiClient,
+  managerApiClient
+} from "./axios";
 
 import type {
   ApiResponse,
@@ -6,25 +9,24 @@ import type {
   Department,
   PatientLookup,
   EligibilityResult,
+  AuthorizationRequest
 } from "../types/specialist.interface";
-
-import type {
-  CreateEncounterRequest,
-  CreateEncounterResponse
-} from "../types/encounter.interface";
 
 import type {
   UpdateEncounterRequest
 } from "../types/documentVerification.interface";
 
 import type {
-  CreateAuthorizationRequest,
-  CreateAuthorizationResponse
+  CreateAuthorizationRequest
 } from "../types/authorization.interface";
 
 import type {
   AddAuthorizationServiceRequest
 } from "../types/authorization-service.interface";
+
+import type {
+  CreateEncounterRequest
+} from "../types/encounter.interface";
 
 export const getFacilities = async () => {
   const response =
@@ -144,3 +146,21 @@ export const verifyEncounter = async (
 
     return response.data;
   };
+
+export const getAuthorizationRequests = async (
+  status?: number
+) => {
+  const response =
+    await specialistApiClient.get<
+      ApiResponse<AuthorizationRequest[]>
+    >(
+      "/api/Authorization",
+      {
+        params: {
+          status
+        }
+      }
+    );
+
+  return response.data;
+};

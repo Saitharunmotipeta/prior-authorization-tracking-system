@@ -28,3 +28,14 @@ export interface EligibilityResult {
   message: string;
   policyExpiryDate: string;
 }
+
+export interface AuthorizationRequest {
+  authId: number;
+  patientName: string;
+  payerName: string;
+  status: string;
+  priority: string;
+  estimatedAmount: number;
+  createdAt: string;
+  submittedAt: string | null;
+}
