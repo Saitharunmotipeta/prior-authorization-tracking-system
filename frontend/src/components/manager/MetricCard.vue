@@ -38,14 +38,14 @@ defineProps<Props>();
 
 .metric-title {
   font-size: 16px;
-  color: #6b7280;
+  color: #1e293b;
   margin-bottom: 12px;
 }
 
 .metric-value {
   font-size: 36px;
   font-weight: 700;
-  color: #2563eb;
+  color: #1e293b;
 }
 
 .metric-subtitle {
