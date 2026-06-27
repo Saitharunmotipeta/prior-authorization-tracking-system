@@ -5,8 +5,14 @@ import {
   getDepartments,
   lookupPatient,
   verifyEligibility,
-  getAuthorizationRequests
+  getAuthorizationRequests,
+  getAuthorizationServices,
+  getAuthorizationTimeline
 } from "../api/specialist.api";
+
+import type {
+  AuthorizationService
+} from "../types/authorization-service.interface";
 
 import {
   getErrorMessage
@@ -17,8 +23,12 @@ import type {
   Department,
   PatientLookup,
   EligibilityResult,
-  AuthorizationRequest
+  AuthorizationRequest,
 } from "../types/specialist.interface";
+
+import type {
+AuthorizationTimeline
+} from "../types/authorization.interface";
 
 export const useSpecialistStore =
   defineStore(
@@ -33,6 +43,12 @@ export const useSpecialistStore =
 
         authorizationRequests:
   [] as AuthorizationRequest[],
+
+        authorizationServices:
+          [] as AuthorizationService[],
+
+          authorizationTimeline:
+    [] as AuthorizationTimeline[],
 
         selectedFacilityId:
           null as number | null,
@@ -221,7 +237,64 @@ export const useSpecialistStore =
           this.loading = false;
         }
       }, 
+      async loadAuthorizationServices(
+        authId: number
+      ) {
+        try {
+          this.loading = true;
 
+          this.error = null;
+
+          const response =
+            await getAuthorizationServices(
+              authId
+            );
+
+          this.authorizationServices =
+            response.data;
+        }
+        catch (error) {
+          console.error(error);
+
+          this.error =
+            getErrorMessage(error);
+        }
+        finally {
+          this.loading = false;
+        }
+      },
+      async loadAuthorizationTimeline(
+        authId: number
+      ) {
+        try {
+
+          this.loading = true;
+
+          this.error = null;
+
+          const response =
+            await getAuthorizationTimeline(
+              authId
+            );
+
+          this.authorizationTimeline =
+            response.data;
+
+        }
+        catch (error) {
+
+          console.error(error);
+
+          this.error =
+            getErrorMessage(error);
+
+        }
+        finally {
+
+          this.loading = false;
+
+        }
+      },
         clearError() {
           this.error = null;
         }

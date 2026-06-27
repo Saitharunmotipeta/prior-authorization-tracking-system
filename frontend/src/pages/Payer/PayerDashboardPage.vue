@@ -3,6 +3,7 @@ import {
   ref,
   onMounted
 } from "vue";
+import { useRoute } from "vue-router";
 
 import {
   storeToRefs
@@ -24,6 +25,7 @@ import {
   usePayerStore
 } from "../../stores/payer.store";
 
+const route = useRoute();
 const payerStore =
   usePayerStore();
 
@@ -62,14 +64,17 @@ const {
 const drawerOpen =
   ref(false);
 
-onMounted(
-  async () => {
+onMounted(async () => {
 
-    await payerStore
-      .loadFacilities();
+  await payerStore.loadFacilities();
 
+  const authId = Number(route.query.authId);
+
+  if (authId) {
+    await openDrawer(authId);
   }
-);
+
+});
 
 const selectFacility =
   async (
