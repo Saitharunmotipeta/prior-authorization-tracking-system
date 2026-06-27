@@ -38,8 +38,8 @@ Modular Monolithic Architecture
 ```
                     Vue Frontend
 
-       Specialist     Manager      Payer
-             │            │            │
+       Specialist     Manager              Payer
+             │            │                  │
              └────── ASP.NET Core APIs ──────┘
                           │
                     Shared Library
