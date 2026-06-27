@@ -8,6 +8,9 @@ from "pinia-plugin-persistedstate";
 import App from "./App.vue";
 import router from "./router";
 
+
+
+
 const app = createApp(App);
 
 const pinia = createPinia();
@@ -15,6 +18,26 @@ app.use(pinia);
 pinia.use(
   piniaPluginPersistedstate
 );
-app.use(router);
 
-app.mount("#app");
+
+
+import { createVuetify } from 'vuetify';
+import 'vuetify/styles'; 
+
+const vuetify = createVuetify();
+
+
+// createApp(App)
+//   .use(vuetify)
+//   .mount('#app');
+
+// app.use(router);
+
+// app.mount("#app");
+
+
+app.use(vuetify)
+app.use(router)
+app.mount('#app')
+
+
