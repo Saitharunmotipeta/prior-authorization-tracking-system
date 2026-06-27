@@ -5,7 +5,7 @@
     <div class="page-header">
 
       <h1>
-        🔔 Reminders
+         Reminders
       </h1>
 
       <p class="subtitle">
@@ -42,9 +42,9 @@
 
         <div class="icon">
 
-          🔔
+  <BellRing :size="24" />
 
-        </div>
+</div>
 
 
         <div class="content">
@@ -109,7 +109,9 @@
 import { ref, onMounted } from "vue";
 import { getReminders } from "../../api/specialist.api";
 import { useRouter } from "vue-router";
-
+import {
+  BellRing
+} from "lucide-vue-next";
 const router = useRouter();
 
 interface Reminder {
