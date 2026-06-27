@@ -14,35 +14,54 @@ on:
 permissions:
   contents: read
 
-jobs:
-  build-test:
-    runs-on: ubuntu-latest
+env:
+  DB_CONNECTION: ${{ secrets.DB_CONNECTION }}
 
-    env:
-      DB_CONNECTION: ${{ secrets.DB_CONNECTION }}
+jobs:
+
+# =====================================
+# Backend Build
+# =====================================
+
+  backend-build:
+    name: Backend Build
+    runs-on: ubuntu-latest
 
     steps:
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 9
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.0.x"
+          dotnet-version: 9.0.x
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Restore Backend
+      - name: Restore Solution
         run: dotnet restore backend/PriorAuthorization.sln
 
-      - name: Build Backend
+      - name: Build Solution
         run: dotnet build backend/PriorAuthorization.sln --configuration Release --no-restore
 
-      - name: Install Frontend Dependencies
+# =====================================
+# Frontend Build
+# =====================================
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Packages
         working-directory: frontend
         run: npm install
 
@@ -50,33 +69,106 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+# =====================================
+# Docker Build
+# =====================================
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+
+    needs:
+      - backend-build
+      - frontend-build
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Build Docker Images
         run: docker compose build
 
-      - name: Start Containers
-        run: docker compose up -d
+# =====================================
+# Integration Environment
+# =====================================
 
-      - name: Wait for Containers
+  integration-test:
+    name: Docker Compose
+    runs-on: ubuntu-latest
+
+    needs:
+      - docker-build
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Start Containers
+        run: docker compose up -d --build
+
+      - name: Wait For Services
         run: sleep 30
 
-      - name: Specialist Health Check
+# =====================================
+# Health Checks
+# =====================================
+
+  health-check:
+    name: Health Checks
+    runs-on: ubuntu-latest
+
+    needs:
+      - integration-test
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Start Containers
+        run: docker compose up -d --build
+
+      - name: Wait
+        run: sleep 30
+
+      - name: Specialist Health
         run: curl --fail http://localhost:5001/health
 
-      - name: Manager Health Check
+      - name: Manager Health
         run: curl --fail http://localhost:5002/health
 
-      - name: Payer Health Check
+      - name: Payer Health
         run: curl --fail http://localhost:5003/health
+
+# =====================================
+# Smoke Test
+# =====================================
+
+  smoke-test:
+    name: API Smoke Test
+    runs-on: ubuntu-latest
+
+    needs:
+      - health-check
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Start Containers
+        run: docker compose up -d --build
+
+      - name: Wait
+        run: sleep 30
+
+      - name: API Health Endpoint
+        run: curl --fail http://localhost:5001/health
 
       - name: Frontend Availability
         run: curl --fail http://localhost:5173
-
-      - name: API Smoke Test
-        run: curl --fail http://localhost:5001/health
-
-      - name: Print Docker Logs
-        if: failure()
-        run: docker compose logs
 
       - name: Stop Containers
         if: always()
