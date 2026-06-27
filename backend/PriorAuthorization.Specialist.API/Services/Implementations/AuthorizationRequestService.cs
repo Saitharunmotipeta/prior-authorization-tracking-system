@@ -730,4 +730,38 @@ GetAwaitingReviewAuthorizationsAsync()
                 })
             .ToListAsync();
     }
+    public async Task<List<SpecialistReminderDto>> GetRemindersAsync()
+    {
+        var reminders = await _context.Reminders
+            .Include(r => r.Payer)
+            .Include(r => r.Auth)
+            .Where(r =>
+                r.Category == (byte)ReminderCategory.Notification &&
+                (
+                    r.Auth.Status == (byte)RequestStatus.AdditionalInfoRequired ||
+                    r.Auth.Status == (byte)RequestStatus.Approved ||
+                    r.Auth.Status == (byte)RequestStatus.Denied
+                ))
+            .OrderByDescending(r => r.UpdatedAt)
+            .ToListAsync();
+
+        return reminders.Select(r => new SpecialistReminderDto
+        {
+            ReminderId = r.ReminderId,
+            AuthId = r.AuthId,
+            PayerName = r.Payer.PayerName,
+            Status = GetStatusText((RequestStatus)r.Auth.Status),
+            UpdatedAt = r.UpdatedAt
+        }).ToList();
+    }
+    private static string GetStatusText(RequestStatus status)
+    {
+        return status switch
+        {
+            RequestStatus.AdditionalInfoRequired => "Additional Info Required",
+            RequestStatus.Approved => "Approved",
+            RequestStatus.Denied => "Denied",
+            _ => "Unknown"
+        };
+    }
 }

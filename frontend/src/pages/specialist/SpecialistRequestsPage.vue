@@ -1,19 +1,13 @@
 <script setup lang="ts">
-import {
-  onMounted
-} from "vue";
-
-import {
-  storeToRefs
-} from "pinia";
+import { onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
+import { storeToRefs } from "pinia";
 
 import {
   useSpecialistStore
 } from "../../stores/specialist.store";
 
-import {
-  ref
-} from "vue";
+const route = useRoute();
 
 const specialistStore =
   useSpecialistStore();
@@ -28,25 +22,26 @@ const {
     specialistStore
   );
 
-onMounted(() => {
-  specialistStore.loadAuthorizationRequests();
-});
-
-const formatDate = (
-  date: string | null
-) => {
-  if (!date)
-    return "-";
-
-  return new Date(date)
-    .toLocaleDateString();
-};
-
 const showHistoryModal =
   ref(false);
 
 const selectedAuthId =
   ref<number | null>(null);
+
+const showTimeline =
+  ref(false);
+
+const formatDate = (
+  date: string | null
+) => {
+
+  if (!date)
+    return "-";
+
+  return new Date(date)
+    .toLocaleDateString();
+
+};
 
 const viewRequestHistory = async (
   authId: number
@@ -58,11 +53,13 @@ const viewRequestHistory = async (
 
   authorizationTimeline.value = [];
 
-  await specialistStore.loadAuthorizationServices(
-    authId
-  );
+  await specialistStore
+    .loadAuthorizationServices(
+      authId
+    );
 
   showHistoryModal.value = true;
+
 };
 
 const closeHistoryModal = () => {
@@ -74,12 +71,10 @@ const closeHistoryModal = () => {
   selectedAuthId.value = null;
 
   authorizationTimeline.value = [];
+
 };
 
-  const showTimeline =
-  ref(false);
-
-  const viewTimeline =
+const viewTimeline =
   async () => {
 
     if (!selectedAuthId.value)
@@ -90,9 +85,27 @@ const closeHistoryModal = () => {
         selectedAuthId.value
       );
 
-    showTimeline.value =
-      true;
+    showTimeline.value = true;
+
   };
+
+onMounted(async () => {
+
+  await specialistStore
+    .loadAuthorizationRequests();
+
+  const authId =
+    Number(route.query.authId);
+
+  if (authId) {
+
+    await viewRequestHistory(
+      authId
+    );
+
+  }
+
+});
 </script>
 
 <template>

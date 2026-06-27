@@ -37,5 +37,6 @@ public interface IAuthorizationService
 
     Task<List<AuthorizationListItemDto>>
         GetAwaitingReviewAuthorizationsAsync();
+    Task<List<SpecialistReminderDto>> GetRemindersAsync();
 
 }

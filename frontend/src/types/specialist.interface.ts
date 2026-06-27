@@ -48,3 +48,16 @@ export interface IcdCode {
   icdCode: string;
   icdDescription: string;
 }
+export interface SpecialistReminderDto {
+
+  reminderId: number;
+
+  authId: number;
+
+  patientName: string;
+
+  reminderType: string;
+
+  status: string;
+
+}

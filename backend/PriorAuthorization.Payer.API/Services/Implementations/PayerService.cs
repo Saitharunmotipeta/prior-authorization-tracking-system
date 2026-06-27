@@ -397,7 +397,7 @@ public class PayerService : IPayerService
                 }
 
                 auth.Status =
-                    (byte)RequestStatus.Approved;
+    (byte)RequestStatus.Approved;
 
                 auth.ApprovedAmount =
                     dto.ApprovedAmount;
@@ -405,25 +405,39 @@ public class PayerService : IPayerService
                 auth.ReviewedAt =
                     DateTime.UtcNow;
 
+                CreateSpecialistReminder(
+                    auth,
+                    $"Authorization #{auth.AuthId} was approved.");
+
+               
+
                 break;
 
             case ReviewActionType.Deny:
 
                 auth.Status =
-                    (byte)RequestStatus.Denied;
+    (byte)RequestStatus.Denied;
 
                 auth.ReviewedAt =
                     DateTime.UtcNow;
+
+                CreateSpecialistReminder(
+                    auth,
+                    $"Authorization #{auth.AuthId} was denied.");
 
                 break;
 
             case ReviewActionType.RequestMoreInfo:
 
                 auth.Status =
-                    (byte)RequestStatus.AdditionalInfoRequired;
+    (byte)RequestStatus.AdditionalInfoRequired;
 
                 auth.ReviewedAt =
                     DateTime.UtcNow;
+
+                CreateSpecialistReminder(
+                    auth,
+                    $"Additional information requested for Authorization #{auth.AuthId}.");
 
                 break;
 
@@ -492,6 +506,22 @@ public class PayerService : IPayerService
             authId,
             dto.Action);
         return true;
+    }
+    private void CreateSpecialistReminder(
+    AuthorizationRequest auth,
+    string remarks)
+    {
+        _context.Reminders.Add(
+            new Reminder
+            {
+                AuthId = auth.AuthId,
+                PayerId = auth.PayerId,
+                Category = (byte)ReminderCategory.Notification,
+                Status = (byte)ReminderStatus.Pending,
+                ScheduledAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                Remarks = remarks
+            });
     }
 
     public async Task<List<RequestLists>> GetEmergencyRequests()

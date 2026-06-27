@@ -7,24 +7,26 @@ import {
   verifyEligibility,
   getAuthorizationRequests,
   getAuthorizationServices,
-  getAuthorizationTimeline
+  getAuthorizationTimeline,
+  getReminders
 } from "../api/specialist.api";
 
 import {
   getErrorMessage
 } from "../utils/error-handler";
 
+
+import type {
+AuthorizationTimeline
+} from "../types/authorization.interface";
 import type {
   Facility,
   Department,
   PatientLookup,
   EligibilityResult,
   AuthorizationRequest,
+  SpecialistReminderDto   // <-- ADD
 } from "../types/specialist.interface";
-
-import type {
-AuthorizationTimeline
-} from "../types/authorization.interface";
 
 export const useSpecialistStore =
   defineStore(
@@ -45,6 +47,8 @@ export const useSpecialistStore =
 
           authorizationTimeline:
     [] as AuthorizationTimeline[],
+    reminders:
+  [] as SpecialistReminderDto[],
 
         selectedFacilityId:
           null as number | null,
@@ -211,6 +215,34 @@ export const useSpecialistStore =
             this.loading = false;
           }
         },
+        async loadReminders() {
+  try {
+
+    this.loading = true;
+
+    this.error = null;
+
+    const response =
+      await getReminders();
+
+    this.reminders =
+      response.data;
+
+  }
+  catch (error) {
+
+    console.error(error);
+
+    this.error =
+      getErrorMessage(error);
+
+  }
+  finally {
+
+    this.loading = false;
+
+  }
+},
 
       async loadAuthorizationRequests() {
         try {

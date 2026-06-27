@@ -169,4 +169,14 @@ public class AuthorizationController : ControllerBase
                     result,
                     "Awaiting review authorizations retrieved successfully."));
     }
+    [HttpGet("reminders")]
+    public async Task<IActionResult> GetReminders()
+    {
+        var reminders = await _authorizationService.GetRemindersAsync();
+
+        return Ok(
+            ApiResponse<List<SpecialistReminderDto>>
+                .SuccessResponse(reminders,
+                "Reminders fetched successfully."));
+    }
 }

@@ -26,6 +26,8 @@ from "../pages/specialist/AuthorizationSummaryPage.vue";
 
 import SpecialistRequestsPage
 from "@/pages/specialist/SpecialistRequestsPage.vue";
+import RemindersPage
+from "../pages/specialist/RemindersPage.vue";
 
 export const specialistRoutes:
   RouteRecordRaw[] = [
@@ -115,7 +117,15 @@ export const specialistRoutes:
         path: "requests",
         component:
           SpecialistRequestsPage
-      }
+      },
+      {
+    path: "reminders",
+
+    name: "SpecialistReminders",
+
+    component: RemindersPage
+}
+   
     ]
   }
 ];
