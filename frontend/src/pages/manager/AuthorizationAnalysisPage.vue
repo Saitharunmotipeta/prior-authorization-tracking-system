@@ -14,7 +14,7 @@ const dashboardStore = useManagerDashboardStore();
 
 const {
   dashboard,
-  delayTrend
+  delayTrends
 } = storeToRefs(dashboardStore);
 
 onMounted(async () => {
@@ -38,7 +38,7 @@ onMounted(async () => {
     />
 
     <DelayTrendChart
-      :trends="delayTrend"
+      :trends="delayTrends"
     />
 
   </div>

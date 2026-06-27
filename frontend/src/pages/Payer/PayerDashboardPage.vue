@@ -102,42 +102,6 @@ const openDrawer =
       true;
 
   };
-
-const approve =
-(
-  payload: any
-) => {
-
-  console.log(
-    "Approve",
-    payload
-  );
-
-};
-
-const deny =
-(
-  payload: any
-) => {
-
-  console.log(
-    "Deny",
-    payload
-  );
-
-};
-
-const requestMoreInfo =
-(
-  payload: any
-) => {
-
-  console.log(
-    "Request More Info",
-    payload
-  );
-
-};
 </script>
 
 <template>
