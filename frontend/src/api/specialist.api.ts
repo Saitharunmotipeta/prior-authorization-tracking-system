@@ -12,6 +12,7 @@ import type {
   EligibilityResult, 
   CptCode,
   IcdCode
+  IcdCode
 } from "../types/specialist.interface";
 
 import type {

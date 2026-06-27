@@ -1,9 +1,9 @@
 import type { RouteRecordRaw } from "vue-router";
 
-import PayerDashboardPage from "../pages/payer/PayerDashboardPage.vue";
-import RemindersPage from "../pages/payer/RemindersPage.vue";
-import AuditHistoryPage from "../pages/payer/AuditHistoryPage.vue";
-import PayerLayout from "../layouts/payerLayout.vue";
+import PayerDashboardPage from "../pages/Payer/PayerDashboardPage.vue";
+import RemindersPage from "../pages/Payer/RemindersPage.vue";
+import AuditHistoryPage from "../pages/Payer/AuditHistoryPage.vue";
+import PayerLayout from "../layouts/PayerLayout.vue";
 
 export const payerRoutes: RouteRecordRaw[] = [
   {

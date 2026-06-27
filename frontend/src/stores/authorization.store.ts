@@ -22,8 +22,7 @@ import type {
 } from "../types/authorization.interface";
 
 import type {
-  AddAuthorizationServiceRequest,
-  AddAuthorizationServiceListRequest
+  AddAuthorizationServiceRequest
 } from "../types/authorization-service.interface";
 
 export const useAuthorizationStore =

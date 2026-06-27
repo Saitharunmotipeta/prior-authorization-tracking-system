@@ -4,10 +4,8 @@ import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 
 import {
-  ShieldCheck,
   FileCheck,
-  User,
-  Building2
+  User
 } from "lucide-vue-next";
 
 import AppError
