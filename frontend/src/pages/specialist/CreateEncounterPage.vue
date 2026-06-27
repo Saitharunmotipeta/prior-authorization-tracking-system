@@ -118,7 +118,7 @@ const createEncounter =
       <AppStatusBadge
         :status="requestStatus"
       />
-
+   
     </div>
 
     <AppError
