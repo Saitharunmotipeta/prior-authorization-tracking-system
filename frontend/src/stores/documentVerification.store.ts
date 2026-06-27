@@ -54,6 +54,18 @@ export const useDocumentVerificationStore =
       }),
 
       actions: {
+
+        resetDocuments() {
+    this.identificationVerified = false;
+    this.prescriptionVerified = false;
+    this.scanVerified = false;
+    this.doctorNotesVerified = false;
+    this.insuranceCardVerified = false;
+    this.remarks = "";
+    this.verificationStatus = "";
+    this.loading = false;
+    this.error = null;
+},
         async saveDocuments() {
           const encounterStore =
             useEncounterStore();
