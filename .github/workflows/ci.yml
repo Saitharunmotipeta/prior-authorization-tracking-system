@@ -1,3 +1,4 @@
+```yaml
 name: Prior Authorization CI Pipeline
 
 on:
@@ -19,23 +20,24 @@ env:
 
 jobs:
 
-# =====================================
-# Backend Build
-# =====================================
-
   backend-build:
     name: Backend Build
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
 
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
+
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Restore Solution
         run: dotnet restore backend/PriorAuthorization.sln
@@ -43,35 +45,32 @@ jobs:
       - name: Build Solution
         run: dotnet build backend/PriorAuthorization.sln --configuration Release --no-restore
 
-# =====================================
-# Frontend Build
-# =====================================
-
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
 
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install Packages
+      - name: Cache npm Packages
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Dependencies
         working-directory: frontend
         run: npm install
 
       - name: Build Frontend
         working-directory: frontend
         run: npm run build
-
-# =====================================
-# Docker Build
-# =====================================
 
   docker-build:
     name: Docker Build
@@ -82,94 +81,47 @@ jobs:
       - frontend-build
 
     steps:
-
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Build Docker Images
         run: docker compose build
 
-# =====================================
-# Integration Environment
-# =====================================
-
-  integration-test:
-    name: Docker Compose
+  integration-tests:
+    name: Integration Tests
     runs-on: ubuntu-latest
 
     needs:
       - docker-build
 
     steps:
-
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Start Containers
         run: docker compose up -d --build
 
-      - name: Wait For Services
+      - name: Wait for Services
         run: sleep 30
 
-# =====================================
-# Health Checks
-# =====================================
-
-  health-check:
-    name: Health Checks
-    runs-on: ubuntu-latest
-
-    needs:
-      - integration-test
-
-    steps:
-
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Start Containers
-        run: docker compose up -d --build
-
-      - name: Wait
-        run: sleep 30
-
-      - name: Specialist Health
+      - name: Specialist Health Check
         run: curl --fail http://localhost:5001/health
 
-      - name: Manager Health
+      - name: Manager Health Check
         run: curl --fail http://localhost:5002/health
 
-      - name: Payer Health
+      - name: Payer Health Check
         run: curl --fail http://localhost:5003/health
-
-# =====================================
-# Smoke Test
-# =====================================
-
-  smoke-test:
-    name: API Smoke Test
-    runs-on: ubuntu-latest
-
-    needs:
-      - health-check
-
-    steps:
-
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Start Containers
-        run: docker compose up -d --build
-
-      - name: Wait
-        run: sleep 30
-
-      - name: API Health Endpoint
-        run: curl --fail http://localhost:5001/health
 
       - name: Frontend Availability
         run: curl --fail http://localhost:5173
 
+      - name: Specialist API Smoke Test
+        run: curl --fail http://localhost:5001/swagger/index.html
+
+      - name: Print Docker Logs
+        if: failure()
+        run: docker compose logs
+
       - name: Stop Containers
         if: always()
         run: docker compose down
+
