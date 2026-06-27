@@ -147,29 +147,63 @@ jobs:
 # =====================================
 
   smoke-test:
-    name: API Smoke Test
-    runs-on: ubuntu-latest
+  name: API Smoke Test
+  runs-on: ubuntu-latest
 
-    needs:
-      - health-check
+  needs:
+    - health-check
 
-    steps:
+  steps:
 
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-      - name: Start Containers
-        run: docker compose up -d --build
+    - name: Start Containers
+      run: docker compose up -d --build
 
-      - name: Wait
-        run: sleep 30
+    - name: Wait
+      run: sleep 30
 
-      - name: API Health Endpoint
-        run: curl --fail http://localhost:5001/health
+    # -----------------------------
+    # Specialist Smoke Test
+    # -----------------------------
 
-      - name: Frontend Availability
-        run: curl --fail http://localhost:5173
+    - name: Test Specialist API - Facilities
+      run: curl --fail http://localhost:5001/api/facilities
 
-      - name: Stop Containers
-        if: always()
-        run: docker compose down
+    # -----------------------------
+    # Manager Smoke Test
+    # -----------------------------
+
+    - name: Test Manager API - Dashboard
+      run: curl --fail http://localhost:5002/api/dashboard
+
+    # -----------------------------
+    # Payer Smoke Test
+    # -----------------------------
+
+    - name: Test Payer API - Payers
+      run: curl --fail http://localhost:5003/api/payers
+
+    # -----------------------------
+    # Frontend Verification
+    # -----------------------------
+
+    - name: Frontend Availability
+      run: curl --fail http://localhost:5173
+
+    # -----------------------------
+    # Docker Logs on Failure
+    # -----------------------------
+
+    - name: Print Docker Logs
+      if: failure()
+      run: docker compose logs
+
+    # -----------------------------
+    # Cleanup
+    # -----------------------------
+
+    - name: Stop Containers
+      if: always()
+      run: docker compose down
