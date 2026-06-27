@@ -28,7 +28,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -52,7 +51,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -82,7 +80,6 @@ jobs:
       - frontend-build
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -94,22 +91,24 @@ jobs:
 # =====================================
 
   integration-test:
-    name: Docker Compose
+    name: Docker Compose Validation
     runs-on: ubuntu-latest
 
     needs:
       - docker-build
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Start Containers
-        run: docker compose up -d --build
+        run: docker compose up -d
 
       - name: Wait For Services
         run: sleep 30
+
+      - name: Verify Running Containers
+        run: docker ps -a
 
 # =====================================
 # Health Checks
@@ -123,87 +122,85 @@ jobs:
       - integration-test
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Start Containers
-        run: docker compose up -d --build
+        run: docker compose up -d
 
       - name: Wait
         run: sleep 30
 
-      - name: Specialist Health
+      - name: Specialist Health Check
         run: curl --fail http://localhost:5001/health
 
-      - name: Manager Health
+      - name: Manager Health Check
         run: curl --fail http://localhost:5002/health
 
-      - name: Payer Health
+      - name: Payer Health Check
         run: curl --fail http://localhost:5003/health
 
 # =====================================
-# Smoke Test
+# Smoke Tests
 # =====================================
 
   smoke-test:
-  name: API Smoke Test
-  runs-on: ubuntu-latest
+    name: API Smoke Tests
+    runs-on: ubuntu-latest
 
-  needs:
-    - health-check
+    needs:
+      - health-check
 
-  steps:
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Start Containers
+        run: docker compose up -d
 
-    - name: Start Containers
-      run: docker compose up -d --build
+      - name: Wait
+        run: sleep 30
 
-    - name: Wait
-      run: sleep 30
+      # -----------------------------
+      # Specialist Smoke Test
+      # -----------------------------
 
-    # -----------------------------
-    # Specialist Smoke Test
-    # -----------------------------
+      - name: Test Specialist API - Facilities
+        run: curl --fail http://localhost:5001/api/facilities
 
-    - name: Test Specialist API - Facilities
-      run: curl --fail http://localhost:5001/api/facilities
+      # -----------------------------
+      # Manager Smoke Test
+      # -----------------------------
 
-    # -----------------------------
-    # Manager Smoke Test
-    # -----------------------------
+      - name: Test Manager API - Dashboard
+        run: curl --fail http://localhost:5002/api/dashboard
 
-    - name: Test Manager API - Dashboard
-      run: curl --fail http://localhost:5002/api/dashboard
+      # -----------------------------
+      # Payer Smoke Test
+      # -----------------------------
 
-    # -----------------------------
-    # Payer Smoke Test
-    # -----------------------------
+      - name: Test Payer API - Payers
+        run: curl --fail http://localhost:5003/api/payers
 
-    - name: Test Payer API - Payers
-      run: curl --fail http://localhost:5003/api/payers
+      # -----------------------------
+      # Frontend Verification
+      # -----------------------------
 
-    # -----------------------------
-    # Frontend Verification
-    # -----------------------------
+      - name: Frontend Availability
+        run: curl --fail http://localhost:5173
 
-    - name: Frontend Availability
-      run: curl --fail http://localhost:5173
+      # -----------------------------
+      # Docker Logs on Failure
+      # -----------------------------
 
-    # -----------------------------
-    # Docker Logs on Failure
-    # -----------------------------
+      - name: Print Docker Logs
+        if: failure()
+        run: docker compose logs
 
-    - name: Print Docker Logs
-      if: failure()
-      run: docker compose logs
+      # -----------------------------
+      # Cleanup
+      # -----------------------------
 
-    # -----------------------------
-    # Cleanup
-    # -----------------------------
-
-    - name: Stop Containers
-      if: always()
-      run: docker compose down
+      - name: Stop Containers
+        if: always()
+        run: docker compose down
