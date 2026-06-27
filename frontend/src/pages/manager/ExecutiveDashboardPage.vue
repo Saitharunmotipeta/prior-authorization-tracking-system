@@ -1,13 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted} from "vue";
 import { storeToRefs } from "pinia";
-import {
-  LayoutDashboard,
-  Building2,
-  ShieldCheck,
-  FileBarChart2,
-  LogOut
-} from "lucide-vue-next";
 
 import { useManagerDashboardStore } from "../../stores/managerDashboard.store";
 
@@ -36,7 +29,6 @@ const {
   delayTrend
 } = storeToRefs(dashboardStore);
 
-const activeTab = ref("overview");
 
 onMounted(async () => {
   await dashboardStore.loadAllDashboardData();
@@ -44,53 +36,19 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="dashboard-layout">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <h2>Manager Portal</h2>
-      </div>
-      <button
-        :class="{ active: activeTab === 'overview' }"
-        @click="activeTab = 'overview'"
-      >
-        <LayoutDashboard :size="18" />
-        <span>Overview</span>
-      </button>
+  <div class="dashboard-page">
+    <div class="dashboard-main">
+    <div class="page-header">
 
-      <button
-        :class="{ active: activeTab === 'facility' }"
-        @click="activeTab = 'facility'"
-      >
-        <Building2 :size="18" />
-        <span>Facility Performance</span>
-      </button>
-
-      <button
-        :class="{ active: activeTab === 'payer' }"
-        @click="activeTab = 'payer'"
-      >
-        <ShieldCheck :size="18" />
-        <span>Payer Analysis</span>
-      </button>
-
-      <button
-        :class="{ active: activeTab === 'authorization' }"
-        @click="activeTab = 'authorization'"
-      >
-        <FileBarChart2 :size="18" />
-        <span>Authorization Analysis</span>
-      </button>
-      <button class="logout-btn">
-        <LogOut :size="18" />
-        <span>Logout</span>
-      </button>
-    </aside>
-
-    <main class="dashboard-main">
-      <h1 class="page-title">
-        Dashboard
+      <h1>
+        Manager Dashboard
       </h1>
 
+      <p>
+        Monitor authorization performance, payer analytics, facility metrics, and revenue insights.
+      </p>
+
+    </div>
       <div
         v-if="loading"
         class="loading"
@@ -109,7 +67,7 @@ onMounted(async () => {
         v-else-if="dashboard"
         class="dashboard-content"
       >
-        <template v-if="activeTab === 'overview'">
+      <div>
           <div class="metrics-grid">
             <MetricCard
               title="Total Encounters"
@@ -147,54 +105,9 @@ onMounted(async () => {
               :revenue-at-risk="revenueAtRisk"
             />
           </div>
-        </template>
-
-        <template v-if="activeTab === 'facility'">
-          <div class="table-section">
-            <FacilityComparisonTable
-              :facilities="facilityComparison"
-            />
-          </div>
-        </template>
-
-        <template v-if="activeTab === 'payer'">
-          <div class="charts-grid">
-            <PayerPerformanceChart
-              :payer-performance="payerPerformance"
-            />
-
-            <SlowPayersChart
-              :slow-payers="slowPayers"
-            />
-          </div>
-
-          <div class="table-grid">
-            <TopPerformingPayersTable
-              :payers="topPerformingPayers"
-            />
-
-            <PoorPerformingPayersTable
-              :payers="poorPerformingPayers"
-            />
-          </div>
-        </template>
-
-        <template v-if="activeTab === 'authorization'">
-          <div class="charts-grid">
-            <StatusDistributionChart
-              :approved="dashboard.approvedRequests"
-              :denied="dashboard.deniedRequests"
-              :pending="dashboard.pendingRequests"
-              :expired="dashboard.expiredRequests"
-            />
-
-            <DelayTrendChart
-              :trends="delayTrend"
-            />
-          </div>
-        </template>
+        </div>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -271,12 +184,25 @@ onMounted(async () => {
   padding: 30px;
 }
 
-.page-title {
-  text-align: center;
+.page-header {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 36px 32px;
   margin-bottom: 32px;
-  font-size: 38px;
-  font-weight: 700;
-  color: #1e40af;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 5%);
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #1e293b;
+}
+
+.page-header p {
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-size: 14px;
+  color: #64748b;
 }
 
 .metrics-grid {

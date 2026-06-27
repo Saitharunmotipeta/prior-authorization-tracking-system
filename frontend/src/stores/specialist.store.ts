@@ -10,6 +10,10 @@ import {
   getAuthorizationTimeline
 } from "../api/specialist.api";
 
+import type {
+  AuthorizationService
+} from "../types/authorization-service.interface";
+
 import {
   getErrorMessage
 } from "../utils/error-handler";
