@@ -10,10 +10,6 @@ import {
   getAuthorizationTimeline
 } from "../api/specialist.api";
 
-import type {
-  AuthorizationService
-} from "../types/authorization-service.interface";
-
 import {
   getErrorMessage
 } from "../utils/error-handler";
@@ -29,6 +25,7 @@ import type {
 import type {
 AuthorizationTimeline
 } from "../types/authorization.interface";
+import type { AuthorizationServiceDetail } from "../types/payer.interface";
 
 export const useSpecialistStore =
   defineStore(
@@ -45,7 +42,7 @@ export const useSpecialistStore =
   [] as AuthorizationRequest[],
 
         authorizationServices:
-          [] as AuthorizationService[],
+          [] as AuthorizationServiceDetail[],
 
           authorizationTimeline:
     [] as AuthorizationTimeline[],

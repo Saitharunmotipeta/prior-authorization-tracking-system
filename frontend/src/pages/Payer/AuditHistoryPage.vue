@@ -5,7 +5,7 @@ import { storeToRefs } from "pinia";
 
 const payerStore = usePayerStore();
 
-const { auditHistory, loading } = storeToRefs(payerStore);
+const { auditHistory } = storeToRefs(payerStore);
 
 const formatAction = (action: string) => {
   if (action === "RequestedMoreInfo") return "Requested More Info";

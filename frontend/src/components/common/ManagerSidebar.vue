@@ -3,8 +3,7 @@ import {
   LayoutDashboard,
   Building2,
   ShieldCheck,
-  FileBarChart2,
-  LogOut
+  FileBarChart2
 } from "lucide-vue-next";
 </script>
 

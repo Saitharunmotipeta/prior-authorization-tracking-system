@@ -15,10 +15,8 @@ const snackbarType = ref("info");
 
 
 import {
-  ShieldCheck,
   FileCheck,
-  User,
-  Building2
+  User
 } from "lucide-vue-next";
 
 import AppError

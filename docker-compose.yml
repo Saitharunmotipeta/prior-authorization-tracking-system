@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+
+  specialist-api:
+    build:
+      context: ./backend
+      dockerfile: PriorAuthorization.Specialist.API/Dockerfile
+    container_name: specialist-api
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=tcp:priorauth-sqlserver-tharun.database.windows.net,1433;Initial Catalog=PriorAuthorizationDB;User ID=<YOUR_SQL_USERNAME>;Password=<YOUR_SQL_PASSWORD>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+
+  manager-api:
+    build:
+      context: ./backend
+      dockerfile: PriorAuthorization.Manager.API/Dockerfile
+    container_name: manager-api
+    ports:
+      - "5002:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=tcp:priorauth-sqlserver-tharun.database.windows.net,1433;Initial Catalog=PriorAuthorizationDB;User ID=<YOUR_SQL_USERNAME>;Password=<YOUR_SQL_PASSWORD>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+
+  payer-api:
+    build:
+      context: ./backend
+      dockerfile: PriorAuthorization.Payer.API/Dockerfile
+    container_name: payer-api
+    ports:
+      - "5003:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=tcp:priorauth-sqlserver-tharun.database.windows.net,1433;Initial Catalog=PriorAuthorizationDB;User ID=<YOUR_SQL_USERNAME>;Password=<YOUR_SQL_PASSWORD>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: priorauth-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - specialist-api
+      - manager-api
+      - payer-api

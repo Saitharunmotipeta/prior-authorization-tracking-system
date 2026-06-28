@@ -239,7 +239,7 @@ v-for="request in authorizationRequests"
 
             <tr
               v-for="service in authorizationServices"
-              :key="service.serviceId"
+              :key="service.cptCode"
             >
               <td>{{ service.cptCode }}</td>
               <td>{{ service.icdCode }}</td>

@@ -1,6 +1,5 @@
 import {
   specialistApiClient,
-  managerApiClient,
   payerApiClient
 } from "./axios";
 
@@ -10,8 +9,7 @@ import type {
   Department,
   PatientLookup,
   EligibilityResult, 
-  CptCode,
-  IcdCode
+  AuthorizationRequest,
 } from "../types/specialist.interface";
 
 import type {
@@ -24,7 +22,6 @@ import type {
 } from "../types/authorization.interface";
 
 import type {
-  AddAuthorizationServiceRequest,
   AddAuthorizationServiceListRequest,
   AuthorizationService
 } from "../types/authorization-service.interface";
