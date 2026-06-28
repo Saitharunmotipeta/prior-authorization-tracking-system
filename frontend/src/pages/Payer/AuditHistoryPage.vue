@@ -33,7 +33,7 @@ onMounted(() => {
       <!-- ✅ CONTEXT LINE -->
      <div class="context">
   <span>AuthId: {{ audit.authId }}</span>
-  <span>PatientId: {{ audit.patientId }}</span>
+  <span>MRNId: {{ audit.patientId }}</span>
   <span>Facility: {{ audit.facilityName }}</span>
 </div>
 

@@ -24,32 +24,47 @@ from "../../components/common/AppError.vue";
 import {
   usePayerStore
 } from "../../stores/payer.store";
+const showSnackbar = ref(false);
+const snackbarMessage = ref("");
 
 const route = useRoute();
 const payerStore =
   usePayerStore();
 
-  const submitReview =
-async (
-payload:any
-)=>{
+  
+const snackbarColor = ref("success");
+const snackbarIcon = ref("✅");
 
-if(
-!authorizationDetails.value
-)
-return;
+const submitReview = async (payload: any) => {
 
-await payerStore
-.reviewAuthorization(
-authorizationDetails.value.authId,
-payload
-);
+  if (!authorizationDetails.value) return;
 
-drawerOpen.value =
-false;
+  await payerStore.reviewAuthorization(
+    authorizationDetails.value.authId,
+    payload
+  );
 
+
+  // ✅ Better messages + colors
+  if (payload.action === 1) {
+  snackbarMessage.value = "Approved successfully";
+  snackbarColor.value = "success";
+  snackbarIcon.value = "✅";
+}
+else if (payload.action === 2) {
+  snackbarMessage.value = "Authorization denied";
+  snackbarColor.value = "error";
+  snackbarIcon.value = "❌";
+}
+else {
+  snackbarMessage.value = "Remarks added";
+  snackbarColor.value = "warning";
+  snackbarIcon.value = "📝";
+}
+
+  showSnackbar.value = true;
+  drawerOpen.value = false;
 };
-
 const {
   facilities,
   selectedFacilityId,
@@ -174,6 +189,25 @@ const openDrawer =
 />
 
   </div>
+<v-snackbar
+  v-model="showSnackbar"
+  :color="snackbarColor"
+  location="top center"
+  timeout="3000"
+  elevation="10"
+  class="custom-snackbar"
+>
+  <div class="snackbar-content">
+    <span class="icon">
+      {{ snackbarIcon }}
+    </span>
+
+    <span class="message">
+      {{ snackbarMessage }}
+    </span>
+  </div>
+</v-snackbar>
+
 
 </div>
 
