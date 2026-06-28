@@ -589,15 +589,23 @@ public class PayerService : IPayerService
             1);
 
         var reminders =
-            await _context.Reminders
-                .Where(r =>
-                    r.PayerId == 1 &&
-                    r.Status ==
-                    (byte)ReminderStatus.Pending)
-                .AsNoTracking()
-                .OrderByDescending(r =>
-                    r.ScheduledAt)
-                .ToListAsync();
+    await _context.Reminders
+        .Where(r =>
+            r.PayerId == 1 &&
+            r.Status == (byte)ReminderStatus.Pending)
+        .Join(
+            _context.AuthorizationRequests,
+            reminder => reminder.AuthId,
+            authorization => authorization.AuthId,
+            (reminder, authorization) => new
+            {
+                Reminder = reminder,
+                Priority = authorization.Priority
+            })
+        .AsNoTracking()
+        .OrderByDescending(x =>
+            x.Reminder.ScheduledAt)
+        .ToListAsync();
 
         if (!reminders.Any())
         {
@@ -612,37 +620,41 @@ public class PayerService : IPayerService
             reminders.Count;
 
         var data =
-            reminders
-                .Select(r =>
-                    new ReminderDto
-                    {
-                        ReminderId =
-                            r.ReminderId,
+    reminders
+        .Select(x =>
+            new ReminderDto
+            {
+                ReminderId =
+                    x.Reminder.ReminderId,
 
-                        AuthId =
-                            r.AuthId,
+                AuthId =
+                    x.Reminder.AuthId,
 
-                        Category =
-                            ((ReminderCategory)r.Category)
-                                .ToString(),
+                Category =
+                    ((ReminderCategory)x.Reminder.Category)
+                        .ToString(),
 
-                        Status =
-                            ((ReminderStatus)r.Status)
-                                .ToString(),
+                Status =
+                    ((ReminderStatus)x.Reminder.Status)
+                        .ToString(),
 
-                        ScheduledAt =
-                            r.ScheduledAt,
+                Priority =
+                    ((ConditionType)x.Priority)
+                        .ToString(),
 
-                        CompletedAt =
-                            r.CompletedAt,
+                ScheduledAt =
+                    x.Reminder.ScheduledAt,
 
-                        Remarks =
-                            r.Remarks,
+                CompletedAt =
+                    x.Reminder.CompletedAt,
 
-                        UpdatedAt =
-                            r.UpdatedAt
-                    })
-                .ToList();
+                Remarks =
+                    x.Reminder.Remarks,
+
+                UpdatedAt =
+                    x.Reminder.UpdatedAt
+            })
+        .ToList();
 
         var result =
             new ReminderListResponseDto

@@ -2,10 +2,11 @@
 
   <div class="reminder-page">
 
+
     <div class="page-header">
 
       <h1>
-         Reminders
+        Reminders
       </h1>
 
       <p class="subtitle">
@@ -15,63 +16,102 @@
     </div>
 
 
-    <div v-if="loading" class="loading">
+
+    <div
+      v-if="loading"
+      class="loading"
+    >
 
       Loading reminders...
 
     </div>
 
 
-    <div v-else-if="reminders.length === 0" class="empty">
+
+
+    <div
+      v-else-if="reminders.length === 0"
+      class="empty"
+    >
 
       No reminders found.
 
     </div>
 
 
+
+
     <div v-else>
+
 
       <div
         v-for="reminder in reminders"
         :key="reminder.reminderId"
         class="reminder-card"
-        @click="
-          openAuthorization(reminder.authId)
-        "
+        @click="openAuthorization(reminder.authId)"
       >
+
+
+
+        <!-- ICON -->
 
         <div class="icon">
 
-  <BellRing :size="24" />
+          <BellRing :size="24" />
 
-</div>
+        </div>
 
+
+
+
+
+        <!-- CONTENT -->
 
         <div class="content">
 
+
           <h3>
-
             Authorization Update
-
           </h3>
 
 
-          <p class="payer">
 
-            {{ reminder.payerName }}
+          <p class="authorization-id">
+
+            Authorization ID:
+
+            <strong>
+              #{{ reminder.authId }}
+            </strong>
 
           </p>
 
 
+
+          <p class="payer">
+
+            Payer:
+
+            <strong>
+              {{ reminder.payerName }}
+            </strong>
+
+          </p>
+
+
+
+
           <p class="message">
 
-            Authorization request status changed to:
+            Authorization status changed to:
 
             <strong>
               {{ reminder.status }}
             </strong>
 
           </p>
+
+
 
 
           <p class="date">
@@ -83,11 +123,22 @@
           </p>
 
 
+
         </div>
 
 
+
+
+
+
+        <!-- STATUS -->
+
         <div
           class="status"
+          :class="
+            'status-' +
+            reminder.status.toLowerCase()
+          "
         >
 
           {{ reminder.status }}
@@ -95,12 +146,16 @@
         </div>
 
 
+
+
       </div>
+
 
     </div>
 
 
   </div>
+
 
 </template>
 
@@ -114,18 +169,17 @@ import {
 } from "lucide-vue-next";
 const router = useRouter();
 
-interface Reminder {
+export interface Reminder {
 
   reminderId: number;
 
   authId: number;
 
-  patientName: string;
+  payerName: string;
 
-  reminderType: string;
-
-  
   status: string;
+
+  updatedAt: string;
 
 }
 
@@ -134,7 +188,7 @@ const reminders = ref<Reminder[]>([]);
 
 const loading = ref(false);
 
-const error = ref<string | null>(null);
+//const error = ref<string | null>(null);
 
 const openAuthorization = (authId: number) => {
 

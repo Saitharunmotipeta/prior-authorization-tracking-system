@@ -2,9 +2,9 @@
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
-import type { AuthorizationRequest } from "../types/specialist.interface";
+//import type { AuthorizationRequest } from "../../types/specialist.interface";
 
-const selectedRequest = ref<AuthorizationRequest | null>(null);
+//const selectedRequest = ref<AuthorizationRequest | null>(null);
 import {
   useSpecialistStore
 } from "../../stores/specialist.store";
@@ -16,7 +16,7 @@ const specialistStore =
 
 const {
   authorizationRequests,
-  authorizationServices,
+ 
   authorizationTimeline,
   loading
 } =
@@ -75,20 +75,6 @@ const closeHistoryModal = () => {
 
 };
 
-const viewTimeline =
-  async () => {
-
-    if (!selectedAuthId.value)
-      return;
-
-    await specialistStore
-      .loadAuthorizationTimeline(
-        selectedAuthId.value
-      );
-
-    showTimeline.value = true;
-
-  };
 
 onMounted(async () => {
 
@@ -420,7 +406,7 @@ Submitted
 <span class="value">
 
 {{formatDate(
-specialistStore.authorizationDetails.submittedAt
+specialistStore.authorizationDetails.submittedAt ?? null
 )}}
 
 </span>
@@ -438,7 +424,7 @@ Reviewed
 <span class="value">
 
 {{formatDate(
-specialistStore.authorizationDetails.reviewedAt
+specialistStore.authorizationDetails.reviewedAt ?? null
 )}}
 
 </span>
@@ -456,7 +442,7 @@ Expiration
 <span class="value">
 
 {{formatDate(
-specialistStore.authorizationDetails.expirationDate
+specialistStore.authorizationDetails.expirationDate ?? null
 )}}
 
 </span>

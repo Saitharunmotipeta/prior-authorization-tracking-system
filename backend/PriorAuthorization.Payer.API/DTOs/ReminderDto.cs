@@ -16,6 +16,7 @@ namespace PriorAuthorization.Payer.API.DTOs
 
         [Required]
         public string Status { get; set; }
+        public string Priority { get; set; }  // new
 
         public DateTime? ScheduledAt { get; set; }
 

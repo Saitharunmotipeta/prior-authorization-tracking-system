@@ -25,7 +25,7 @@ import AuthorizationSummaryPage
 from "../pages/specialist/AuthorizationSummaryPage.vue";
 
 import SpecialistRequestsPage
-from "@/pages/specialist/SpecialistRequestsPage.vue";
+from "../pages/specialist/SpecialistRequestsPage.vue";
 import RemindersPage
 from "../pages/specialist/RemindersPage.vue";
 

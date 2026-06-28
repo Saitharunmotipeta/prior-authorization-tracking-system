@@ -54,12 +54,11 @@ export interface SpecialistReminderDto {
 
   authId: number;
 
-  patientName: string;
-
-  reminderType: string;
+  payerName: string;
 
   status: string;
 
+  updatedAt: string;
 
 }
 export interface AuthorizationDetails {
