@@ -680,6 +680,40 @@ public class AuthorizationRequestService : IAuthorizationService
                 })
             .ToListAsync();
     }
+    public async Task<AuthorizationDetailsDto?> GetAuthorizationDetailsAsync(int authId)
+    {
+        return await _context.AuthorizationRequests
+            .AsNoTracking()
+            .Include(a => a.Payer)
+            .Include(a => a.Encounter)
+                .ThenInclude(e => e.Patient)
+            .Where(a => a.AuthId == authId)
+            .Select(a => new AuthorizationDetailsDto
+            {
+                AuthId = a.AuthId,
+
+                PatientName = a.Encounter.Patient.FullName,
+
+                PayerName = a.Payer.PayerName,
+
+                Status = ((RequestStatus)a.Status).ToString(),
+
+                Priority = ((Priority)a.Priority).ToString(),
+
+                EstimatedAmount = a.EstimatedTotalAmount,
+
+                ApprovedAmount = a.ApprovedAmount,
+
+                SubmittedAt = a.SubmittedAt,
+
+                ReviewedAt = a.ReviewedAt,
+
+                //ExpirationDate = a.ExpirationDate,
+
+                CreatedAt = a.CreatedAt
+            })
+            .FirstOrDefaultAsync();
+    }
     public async Task<List<AuthorizationListItemDto>>
 GetAwaitingReviewAuthorizationsAsync()
     {

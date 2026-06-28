@@ -60,4 +60,18 @@ export interface SpecialistReminderDto {
 
   status: string;
 
+
+}
+export interface AuthorizationDetails {
+  authId: number;
+  patientName: string;
+  payerName: string;
+  status: string;
+  priority: string;
+  estimatedAmount: number;
+  approvedAmount?: number;
+  submittedAt?: string;
+  reviewedAt?: string;
+  expirationDate?: string;
+  createdAt: string;
 }

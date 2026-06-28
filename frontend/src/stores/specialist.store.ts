@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-
+import { getAuthorizationDetails } from "../api/specialist.api";
 import {
   getFacilities,
   getDepartments,
@@ -10,7 +10,9 @@ import {
   getAuthorizationTimeline,
   getReminders
 } from "../api/specialist.api";
-
+import type {
+  AuthorizationService
+} from "../types/authorization-service.interface";
 import {
   getErrorMessage
 } from "../utils/error-handler";
@@ -25,8 +27,10 @@ import type {
   PatientLookup,
   EligibilityResult,
   AuthorizationRequest,
-  SpecialistReminderDto   // <-- ADD
+  AuthorizationDetails,
+  SpecialistReminderDto
 } from "../types/specialist.interface";
+
 
 export const useSpecialistStore =
   defineStore(
@@ -45,8 +49,10 @@ export const useSpecialistStore =
         authorizationServices:
           [] as AuthorizationService[],
 
-          authorizationTimeline:
-    [] as AuthorizationTimeline[],
+         
+  authorizationTimeline: [] as AuthorizationTimeline[],
+  authorizationDetails: null as AuthorizationDetails | null,
+
     reminders:
   [] as SpecialistReminderDto[],
 
@@ -291,6 +297,30 @@ export const useSpecialistStore =
           this.loading = false;
         }
       },
+      async loadAuthorizationDetails(authId: number) {
+
+  try {
+
+    this.loading = true;
+
+    this.authorizationDetails =
+      await getAuthorizationDetails(authId);
+
+  }
+  catch (error) {
+
+    this.error =
+      getErrorMessage(error);
+
+  }
+  finally {
+
+    this.loading = false;
+
+  }
+
+},
+      
       async loadAuthorizationTimeline(
         authId: number
       ) {

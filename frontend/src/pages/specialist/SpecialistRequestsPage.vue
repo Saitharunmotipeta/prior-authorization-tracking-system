@@ -2,7 +2,9 @@
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
+import type { AuthorizationRequest } from "../types/specialist.interface";
 
+const selectedRequest = ref<AuthorizationRequest | null>(null);
 import {
   useSpecialistStore
 } from "../../stores/specialist.store";
@@ -42,10 +44,7 @@ const formatDate = (
     .toLocaleDateString();
 
 };
-
-const viewRequestHistory = async (
-  authId: number
-) => {
+const viewRequestHistory = async (authId: number) => {
 
   selectedAuthId.value = authId;
 
@@ -53,15 +52,15 @@ const viewRequestHistory = async (
 
   authorizationTimeline.value = [];
 
-  await specialistStore
-    .loadAuthorizationServices(
-      authId
-    );
+  await specialistStore.loadAuthorizationDetails(authId);
+
+  await specialistStore.loadAuthorizationServices(authId);
+
+  await specialistStore.loadAuthorizationTimeline(authId); // <-- Missing
 
   showHistoryModal.value = true;
 
 };
-
 const closeHistoryModal = () => {
 
   showHistoryModal.value = false;
@@ -71,6 +70,8 @@ const closeHistoryModal = () => {
   selectedAuthId.value = null;
 
   authorizationTimeline.value = [];
+
+  specialistStore.authorizationDetails = null;
 
 };
 
@@ -107,96 +108,132 @@ onMounted(async () => {
 
 });
 </script>
-
 <template>
 
 <div class="table-card">
 
-<div class="table-header">
-  <h3>Authorization Requests</h3>
+  <div class="table-header">
 
-  <span class="count">
-    {{ authorizationRequests.length }} Requests
-  </span>
+    <h3>
+      Authorization Requests
+    </h3>
+
+    <span class="count">
+      {{ authorizationRequests.length }} Requests
+    </span>
+
+  </div>
+
+
+  <table
+    v-if="!loading"
+    class="table"
+  >
+
+    <thead>
+
+      <tr>
+        <th>ID</th>
+        <th>Patient</th>
+        <th>Payer</th>
+        <th>Status</th>
+        <th>Priority</th>
+        <th>Estimated Amount</th>
+        <th>Action</th>
+      </tr>
+
+    </thead>
+
+
+    <tbody>
+
+      <tr
+        v-for="request in authorizationRequests"
+        :key="request.authId"
+      >
+
+        <td>
+          {{ request.authId }}
+        </td>
+
+
+        <td>
+          {{ request.patientName }}
+        </td>
+
+
+        <td>
+          {{ request.payerName }}
+        </td>
+
+
+        <td>
+
+          <span
+            class="badge"
+            :class="
+              'status-' +
+              request.status.toLowerCase().replace(/\s+/g,'-')
+            "
+          >
+            {{ request.status }}
+          </span>
+
+        </td>
+
+
+        <td>
+
+          <span
+            class="badge"
+            :class="
+              'priority-' +
+              request.priority.toLowerCase()
+            "
+          >
+            {{ request.priority }}
+          </span>
+
+        </td>
+
+
+        <td>
+          ₹ {{ request.estimatedAmount }}
+        </td>
+
+
+        <td>
+
+          <button
+            class="view-button"
+            @click="viewRequestHistory(request.authId)"
+          >
+
+            <i class="pi pi-eye"></i>
+
+            View
+
+          </button>
+
+        </td>
+
+
+      </tr>
+
+    </tbody>
+
+
+  </table>
+
+
 </div>
 
-<table
-v-if="!loading"
-class="table"
->
 
-<thead>
 
-<tr>
 
-<th>ID</th>
 
-<th>Patient</th>
-
-<th>Payer</th>
-
-<th>Status</th>
-
-<th>Priority</th>
-
-<th>Estimated Amount</th>
-
-<th>Action</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr
-v-for="request in authorizationRequests"
-:key="request.authId"
->
-
-<td>{{ request.authId }}</td>
-
-<td>{{ request.patientName }}</td>
-
-<td>{{ request.payerName }}</td>
-
-<td>
-  <span
-    class="badge"
-    :class="'status-' + request.status.toLowerCase().replace(/\s+/g, '-')"
-  >
-    {{ request.status }}
-  </span>
-</td>
-
-<td>
-  <span
-    class="badge"
-    :class="'priority-' + request.priority.toLowerCase()"
-  >
-    {{ request.priority }}
-  </span>
-</td>
-
-<td>{{ request.estimatedAmount }}</td>
-
-<td>
-<button
-  class="view-button"
-  @click="viewRequestHistory(request.authId)"
->
-  <i class="pi pi-eye"></i>
-  View
-</button>
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-</div>
+<!-- DRAWER -->
+<!-- DRAWER -->
 
 <div
   v-if="showHistoryModal"
@@ -204,139 +241,518 @@ v-for="request in authorizationRequests"
   @click="closeHistoryModal"
 >
 
-  <aside
-    class="drawer"
-    @click.stop
-  >
 
-    <div class="drawer-header">
+<aside
+  class="drawer"
+  @click.stop
+>
 
-      <h2>Authorization Details</h2>
 
-      <button
-        class="close-btn"
-        @click="closeHistoryModal"
-      >
-        ✕
-      </button>
+<!-- HEADER -->
 
-    </div>
+<div class="drawer-header">
 
-    <div class="drawer-body">
+<h2>
+Authorization Details
+</h2>
 
-      <div class="details-card">
 
-        <p>
-          <strong>Authorization ID:</strong>
-          {{ selectedAuthId }}
-        </p>
+<button
+  class="close-btn"
+  @click="closeHistoryModal"
+>
+✕
+</button>
 
-      </div>
-
-      <div class="details-card">
-
-        <h3>Services</h3>
-
-        <table class="services-table">
-
-          <thead>
-            <tr>
-              <th>CPT Code</th>
-              <th>ICD Code</th>
-              <th>Estimated Cost</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-
-          <tbody>
-
-            <tr
-              v-for="service in authorizationServices"
-              :key="service.serviceId"
-            >
-              <td>{{ service.cptCode }}</td>
-              <td>{{ service.icdCode }}</td>
-              <td>${{ service.estimatedCost }}</td>
-              <td>{{ service.notes }}</td>
-            </tr>
-
-            <tr
-              v-if="authorizationServices.length === 0"
-            >
-              <td
-                colspan="4"
-                class="empty-row"
-              >
-                No services found.
-              </td>
-            </tr>
-
-          </tbody>
-
-        </table>
-
-        <div class="timeline-section">
-        <button
-        class="timeline-button"
-        @click="viewTimeline"
-        >
-        View Timeline
-        </button>
-        </div>
-
-      </div>
-
-      <div
-      v-if="showTimeline"
-      class="details-card"
-      >
-
-      <h3>
-      Timeline
-      </h3>
-
-      <div
-      v-for="(
-      item,
-      index
-      ) in authorizationTimeline"
-      :key="index"
-      class="timeline-item"
-      >
-
-      <div class="timeline-dot"></div>
-
-      <div class="timeline-content">
-
-      <h4>
-
-      {{ item.action }}
-
-      </h4>
-
-      <p>
-
-      {{ item.remarks }}
-
-      </p>
-
-      <span>
-
-      {{ formatDate(item.createdAt) }}
-
-      </span>
-
-      </div>
-
-      </div>
-
-      </div>
-
-    </div>
-
-  </aside>
 
 </div>
+
+
+
+
+
+<!-- BODY -->
+
+<div class="drawer-body">
+
+
+
+
+
+<!-- AUTHORIZATION INFORMATION -->
+
+
+<div
+  v-if="specialistStore.authorizationDetails"
+  class="details-card"
+>
+
+
+<h3>
+Authorization Information
+</h3>
+
+
+
+<div class="details-grid">
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Auth ID
+</span>
+
+<span class="value">
+{{ specialistStore.authorizationDetails.authId }}
+</span>
+
+</div>
+
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Patient
+</span>
+
+<span class="value">
+{{ specialistStore.authorizationDetails.patientName }}
+</span>
+
+</div>
+
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Payer
+</span>
+
+<span class="value">
+{{ specialistStore.authorizationDetails.payerName }}
+</span>
+
+</div>
+
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Status
+</span>
+
+<span class="status-badge">
+{{ specialistStore.authorizationDetails.status }}
+</span>
+
+</div>
+
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Priority
+</span>
+
+<span class="value">
+{{ specialistStore.authorizationDetails.priority }}
+</span>
+
+</div>
+
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Estimated Amount
+</span>
+
+<span class="value">
+₹ {{ specialistStore.authorizationDetails.estimatedAmount }}
+</span>
+
+</div>
+
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Approved Amount
+</span>
+
+<span class="value">
+
+{{
+specialistStore.authorizationDetails.approvedAmount !== null
+?
+'₹ ' + specialistStore.authorizationDetails.approvedAmount
+:
+'--'
+}}
+
+</span>
+
+</div>
+
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Submitted
+</span>
+
+<span class="value">
+
+{{formatDate(
+specialistStore.authorizationDetails.submittedAt
+)}}
+
+</span>
+
+</div>
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Reviewed
+</span>
+
+<span class="value">
+
+{{formatDate(
+specialistStore.authorizationDetails.reviewedAt
+)}}
+
+</span>
+
+</div>
+
+
+
+<div class="detail-item">
+
+<span class="label">
+Expiration
+</span>
+
+<span class="value">
+
+{{formatDate(
+specialistStore.authorizationDetails.expirationDate
+)}}
+
+</span>
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- SERVICES -->
+
+
+<div class="details-card">
+
+
+<h3>
+Services
+</h3>
+
+
+
+<div
+v-if="specialistStore.authorizationServices?.length"
+class="services-container"
+>
+
+
+
+<div
+v-for="service in specialistStore.authorizationServices"
+:key="service.serviceId"
+class="service-card"
+>
+
+
+
+<div class="service-row">
+
+<span class="service-label">
+CPT Code
+</span>
+
+
+<span class="cpt-badge">
+{{service.cptCode}}
+</span>
+
+
+</div>
+
+
+<div class="service-row">
+
+  <span class="service-label">
+    ICD Code
+  </span>
+
+
+  <span class="icd-badge">
+    {{service.icdCode}}
+  </span>
+
+</div>
+
+
+<div class="service-row">
+
+<span class="service-label">
+Estimated Cost
+</span>
+
+
+<span>
+₹ {{service.estimatedCost.toLocaleString()}}
+</span>
+
+
+</div>
+
+
+
+
+
+<div
+v-if="service.notes"
+class="service-row"
+>
+
+<span class="service-label">
+Notes
+</span>
+
+
+<span>
+{{service.notes}}
+</span>
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+<div
+v-else
+class="empty-row"
+>
+
+No services available.
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- TIMELINE BUTTON -->
+
+
+<button
+class="timeline-btn"
+@click="showTimeline=!showTimeline"
+>
+
+
+<i
+:class="
+showTimeline
+?
+'pi pi-chevron-up'
+:
+'pi pi-chevron-down'
+"
+></i>
+
+
+{{showTimeline ? 'Hide Timeline':'View Timeline'}}
+
+
+</button>
+
+
+
+
+
+
+
+
+
+<!-- TIMELINE -->
+
+
+<div
+v-if="showTimeline"
+class="timeline-card"
+>
+
+
+<h3>
+Authorization Timeline
+</h3>
+
+
+
+<div
+v-if="specialistStore.authorizationTimeline?.length"
+class="timeline-list"
+>
+
+
+
+
+<div
+v-for="(event,index) in specialistStore.authorizationTimeline"
+:key="index"
+class="timeline-item"
+>
+
+
+
+<div class="timeline-marker">
+
+<div class="timeline-dot"></div>
+
+
+<div
+v-if="
+index !== specialistStore.authorizationTimeline.length-1
+"
+class="timeline-line"
+>
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="timeline-content">
+
+
+<h4>
+{{event.action}}
+</h4>
+
+
+
+<p
+v-if="event.remarks"
+>
+{{event.remarks}}
+</p>
+
+
+
+<span>
+{{formatDate(event.createdAt)}}
+</span>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+<div
+v-else
+class="empty-row"
+>
+
+No timeline available.
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+</div>
+<!-- END BODY -->
+
+
+
+</aside>
+
+
+</div>
+<!-- END DRAWER -->
+<!-- drawer-overlay -->
+
+
+
 </template>
 
 <style scoped>
@@ -423,7 +839,225 @@ v-for="request in authorizationRequests"
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
   animation: slideIn 0.25s ease;
 }
+.timeline-btn {
 
+margin-top:20px;
+padding:10px 16px;
+border:none;
+border-radius:8px;
+background:#2563eb;
+color:white;
+cursor:pointer;
+
+display:flex;
+align-items:center;
+gap:8px;
+
+}
+
+.services-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.service-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  background: #fff;
+}
+
+.service-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.service-row:last-child {
+  margin-bottom: 0;
+}
+
+.service-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.cpt-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.timeline-btn {
+
+width:100%;
+margin-top:20px;
+
+padding:12px 16px;
+
+border:none;
+
+border-radius:10px;
+
+background:#2563eb;
+
+color:white;
+
+font-weight:600;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+gap:10px;
+
+cursor:pointer;
+
+}
+
+
+
+.timeline-card{
+
+margin-top:20px;
+
+border:1px solid #e5e7eb;
+
+border-radius:12px;
+
+padding:20px;
+
+background:white;
+
+}
+.icd-badge {
+
+  background:#dcfce7;
+
+  color:#166534;
+
+  padding:4px 10px;
+
+  border-radius:20px;
+
+  font-size:12px;
+
+  font-weight:600;
+
+}
+
+
+.timeline-list{
+
+display:flex;
+
+flex-direction:column;
+
+}
+
+
+
+.timeline-item{
+
+display:flex;
+
+gap:18px;
+
+position:relative;
+
+padding-bottom:24px;
+
+}
+
+
+
+.timeline-marker{
+
+display:flex;
+
+flex-direction:column;
+
+align-items:center;
+
+}
+
+
+
+.timeline-dot{
+
+width:12px;
+
+height:12px;
+
+background:#2563eb;
+
+border-radius:50%;
+
+}
+
+
+
+.timeline-line{
+
+width:2px;
+
+flex:1;
+
+background:#d1d5db;
+
+margin-top:4px;
+
+}
+
+
+
+.timeline-content{
+
+flex:1;
+
+}
+
+
+
+.timeline-content h4{
+
+margin:0;
+
+font-size:15px;
+
+font-weight:600;
+
+}
+
+
+
+.timeline-content p{
+
+margin:6px 0;
+
+color:#6b7280;
+
+white-space:normal;
+
+word-break:break-word;
+
+}
+
+
+
+.timeline-content span{
+
+font-size:12px;
+
+color:#9ca3af;
+
+}
 .drawer-header {
   display: flex;
   justify-content: space-between;
@@ -431,15 +1065,94 @@ v-for="request in authorizationRequests"
   padding: 28px;
   border-bottom: 1px solid #e5e7eb;
 }
+.details-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
+  border: 1px solid #e5e7eb;
+}
 
+
+.details-card h3 {
+  margin-bottom: 18px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+
+.details-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(200px, 1fr));
+
+  gap: 18px;
+
+}
+
+
+.detail-item {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+}
+
+
+.label {
+
+  font-size: 13px;
+
+  color: #6b7280;
+
+}
+
+
+.value {
+
+  font-size: 15px;
+
+  font-weight: 500;
+
+  color: #111827;
+
+}
+
+
+.status-badge {
+
+  width: fit-content;
+
+  padding: 5px 12px;
+
+  border-radius: 20px;
+
+  background: #dbeafe;
+
+  color: #1d4ed8;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+}
 .drawer-header h2 {
   margin: 0;
   font-size: 40px;
   font-weight: 700;
 }
 
-.drawer-body {
-  padding: 28px;
+.drawer-body{
+
+overflow-y:auto;
+
+padding:24px;
+
 }
 
 .close-btn {

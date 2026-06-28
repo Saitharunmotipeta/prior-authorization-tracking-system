@@ -4,7 +4,6 @@ import {
   payerApiClient
 } from "./axios";
 
-
 import type {
   UpdateEncounterRequest
 } from "../types/documentVerification.interface";
@@ -32,6 +31,9 @@ import type {
   EligibilityResult,
   AuthorizationRequest,
   SpecialistReminderDto
+} from "../types/specialist.interface";
+import type {
+  AuthorizationDetails
 } from "../types/specialist.interface";
 
 export const getFacilities = async () => {
@@ -237,4 +239,14 @@ export const getAuthorizationTimeline = async (
     );
 
   return response.data;
+};
+export const getAuthorizationDetails = async (
+  authId: number
+): Promise<AuthorizationDetails> => {
+  const response =
+    await specialistApiClient.get<
+      ApiResponse<AuthorizationDetails>
+    >(`/api/Authorization/${authId}`);
+
+  return response.data.data;
 };

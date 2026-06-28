@@ -154,6 +154,23 @@ public class AuthorizationController : ControllerBase
                     result,
                     "Authorizations retrieved successfully."));
     }
+    [HttpGet("{authId}")]
+    public async Task<ActionResult<ApiResponse<AuthorizationDetailsDto>>> GetAuthorizationDetails(int authId)
+    {
+        var details = await _authorizationService.GetAuthorizationDetailsAsync(authId);
+
+        if (details == null)
+        {
+            return NotFound(
+                ApiResponse<AuthorizationDetailsDto>.FailureResponse(
+                    "Authorization not found."));
+        }
+
+        return Ok(
+            ApiResponse<AuthorizationDetailsDto>.SuccessResponse(
+                details,
+                "Authorization details retrieved successfully."));
+    }
     [HttpGet("awaiting-review")]
     public async Task<IActionResult>
     GetAwaitingReview()
