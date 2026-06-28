@@ -3,11 +3,20 @@ import { useRouter } from "vue-router";
 
 import { storeToRefs } from "pinia";
 
+import { ref } from "vue";
+
+const showSnackbar = ref(false);
+const snackbarMessage = ref("");
+const snackbarType = ref("info");
+// "info" | "error"
+
+
+
+
+
 import {
-  ShieldCheck,
   FileCheck,
-  User,
-  Building2
+  User
 } from "lucide-vue-next";
 
 import AppError
@@ -80,19 +89,34 @@ const saveDocuments =
       .saveDocuments();
   };
 
-const verifyDocuments =
-  async () => {
-    await documentStore
-      .verifyDocuments();
+// or your snackbar implementation
 
-    router.push(
-      "/specialist/create-authorization"
-    );
-  };
+const verifyDocuments = async () => {
+  const success = await documentStore.verifyDocuments();
+
+  if (success) {
+    router.push("/specialist/create-authorization");
+  } else {
+   
+snackbarMessage.value =
+    documentStore.error ||
+    "All documents must be verified";
+
+  snackbarType.value = "error";
+  showSnackbar.value = true;
+
+
+    
+  }
+};
+
+
 </script>
 
 <template>
   <div class="page">
+
+ 
 
     <div class="page-header">
 
@@ -116,11 +140,11 @@ const verifyDocuments =
 
     </div>
 
-    <AppError
-      :message="error"
-    />
+   
 
     <div class="card">
+
+  
 
       <div class="card-title">
 
@@ -312,8 +336,17 @@ const verifyDocuments =
           Verify Encounter
         </button>
 
-      </div>
+ 
 
+
+
+      </div><br>
+   
+       <AppError
+      :message="error"
+    />
+
+      
     </div>
 
   </div>
@@ -360,6 +393,12 @@ const verifyDocuments =
     0 1px 3px
     rgb(0 0 0 / 8%);
 }
+.snackbar-text {
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+}
+
 
 .card-title {
   display: flex;
@@ -486,4 +525,46 @@ textarea {
 
   font-weight: 600;
 }
+
+.custom-snackbar {
+  background-color: #dc2626 !important; /* red */
+  color: white !important;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  padding: 14px 18px;
+  border-radius: 8px;
+
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.fixed-alert {
+  position: fixed;         /* ✅ KEY: fixes to screen */
+  top: 20px;               /* distance from top */
+  left: 50%;               /* center horizontally */
+  transform: translateX(-50%);
+
+  width: 60%;              /* controls width */
+  max-width: 700px;
+
+  background: #fee2e2;     /* light red */
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+
+  color: #b91c1c;          /* dark red text */
+
+  padding: 14px 16px;
+
+  font-weight: 600;
+  font-size: 15px;
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+
+  z-index: 9999;           /* ✅ always on top */
+}
+
+
+
+
 </style>

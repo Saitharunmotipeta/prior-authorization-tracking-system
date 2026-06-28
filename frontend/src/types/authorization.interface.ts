@@ -15,3 +15,9 @@ export interface CreateAuthorizationResponse {
 
   data: number;
 }
+
+export interface AuthorizationTimeline {
+  action: string;
+  remarks: string;
+  createdAt: string;
+}

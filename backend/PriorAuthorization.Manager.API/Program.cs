@@ -1,42 +1,53 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using PriorAuthorization.Manager.API.Services.Implementations;
 using PriorAuthorization.Manager.API.Services.Interfaces;
 using PriorAuthorization.Shared.Data;
 using PriorAuthorization.Shared.Middleware;
+using PriorAuthorization.Manager.API.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+#region Logging
 
 Log.Logger =
     new LoggerConfiguration()
         .MinimumLevel.Information()
         .WriteTo.File(
             path: "Logs/application-.txt",
-            rollingInterval:
-                RollingInterval.Day,
+            rollingInterval: RollingInterval.Day,
             retainedFileCountLimit: 30,
             shared: true)
         .CreateLogger();
 
-//builder.Host.UseSerilog();
+builder.Host.UseSerilog();
 
-// Controllers
+#endregion
+
+#region Controllers
 
 builder.Services.AddControllers();
 
-// Swagger / OpenAPI
+#endregion
+
+#region Swagger
 
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen();
 
-// Database
+#endregion
+
+#region Database
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Services
+#endregion
+
+#region Dependency Injection
 
 builder.Services.AddScoped<
     IDashboardService,
@@ -46,21 +57,36 @@ builder.Services.AddScoped<
     IAnalyticsService,
     AnalyticsService>();
 
+builder.Services.AddHttpClient();
+
+builder.Services.AddScoped<
+    IOpenRouterService,
+    OpenRouterService>();
+
+builder.Services.AddScoped<
+    IExecutiveReportService,
+    ExecutiveReportService>();
+
+#endregion
+
+#region CORS
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendPolicy",
-        policy =>
-        {
-            policy
-                .AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-        });
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
 });
+
+#endregion
 
 var app = builder.Build();
 
-// Configure HTTP pipeline
+#region Middleware Pipeline
 
 if (app.Environment.IsDevelopment())
 {
@@ -74,15 +100,20 @@ app.UseCors("FrontendPolicy");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+#endregion
+
+#region Endpoints
 
 app.MapControllers();
 
+#endregion
+
 try
 {
-    Log.Information(
-        "Application Started");
+    Log.Information("Application Started Successfully");
 
     app.Run();
 }

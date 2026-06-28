@@ -85,3 +85,18 @@ async (
 
     return response.data;
 };
+
+export const getAuditHistory = async () => {
+  const response =
+    await payerApiClient.get<
+      ApiResponse<any[]>
+    >(
+      "/api/payers/audit-history"
+    );
+
+  return response.data;
+};
+
+
+
+

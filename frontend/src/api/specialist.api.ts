@@ -1,6 +1,5 @@
 import {
   specialistApiClient,
-  managerApiClient,
   payerApiClient
 } from "./axios";
 
@@ -9,10 +8,8 @@ import type {
   Facility,
   Department,
   PatientLookup,
-  EligibilityResult,
-  AuthorizationRequest, 
-  CptCode,
-  IcdCode
+  EligibilityResult, 
+  AuthorizationRequest,
 } from "../types/specialist.interface";
 
 import type {
@@ -20,17 +17,19 @@ import type {
 } from "../types/documentVerification.interface";
 
 import type {
-  CreateAuthorizationRequest
+  CreateAuthorizationRequest,
+  AuthorizationTimeline
 } from "../types/authorization.interface";
 
 import type {
-  AddAuthorizationServiceRequest,
-  AddAuthorizationServiceListRequest
+  AddAuthorizationServiceListRequest,
+  AuthorizationService
 } from "../types/authorization-service.interface";
 
 import type {
   CreateEncounterRequest
 } from "../types/encounter.interface";
+
 
 export const getFacilities = async () => {
   const response =
@@ -195,6 +194,32 @@ export const getAuthorizationRequests = async (
           status
         }
       }
+    );
+
+  return response.data;
+};
+
+export const getAuthorizationServices = async (
+  authId: number
+) => {
+  const response =
+    await specialistApiClient.get<
+      ApiResponse<AuthorizationService[]>
+    >(
+      `/api/Authorization/${authId}/services`
+    );
+
+  return response.data;
+};
+
+export const getAuthorizationTimeline = async (
+  authId: number
+) => {
+  const response =
+    await specialistApiClient.get<
+      ApiResponse<AuthorizationTimeline[]>
+    >(
+      `/api/Authorization/${authId}/timeline`
     );
 
   return response.data;

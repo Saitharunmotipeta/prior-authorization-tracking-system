@@ -3,6 +3,7 @@ import {
   ref,
   onMounted
 } from "vue";
+import { useRoute } from "vue-router";
 
 import {
   storeToRefs
@@ -23,31 +24,47 @@ from "../../components/common/AppError.vue";
 import {
   usePayerStore
 } from "../../stores/payer.store";
+const showSnackbar = ref(false);
+const snackbarMessage = ref("");
 
+const route = useRoute();
 const payerStore =
   usePayerStore();
 
-  const submitReview =
-async (
-payload:any
-)=>{
+  
+const snackbarColor = ref("success");
+const snackbarIcon = ref("✅");
 
-if(
-!authorizationDetails.value
-)
-return;
+const submitReview = async (payload: any) => {
 
-await payerStore
-.reviewAuthorization(
-authorizationDetails.value.authId,
-payload
-);
+  if (!authorizationDetails.value) return;
 
-drawerOpen.value =
-false;
+  await payerStore.reviewAuthorization(
+    authorizationDetails.value.authId,
+    payload
+  );
 
+
+  // ✅ Better messages + colors
+  if (payload.action === 1) {
+  snackbarMessage.value = "Approved successfully";
+  snackbarColor.value = "success";
+  snackbarIcon.value = "✅";
+}
+else if (payload.action === 2) {
+  snackbarMessage.value = "Authorization denied";
+  snackbarColor.value = "error";
+  snackbarIcon.value = "❌";
+}
+else {
+  snackbarMessage.value = "Remarks added";
+  snackbarColor.value = "warning";
+  snackbarIcon.value = "📝";
+}
+
+  showSnackbar.value = true;
+  drawerOpen.value = false;
 };
-
 const {
   facilities,
   selectedFacilityId,
@@ -62,14 +79,17 @@ const {
 const drawerOpen =
   ref(false);
 
-onMounted(
-  async () => {
+onMounted(async () => {
 
-    await payerStore
-      .loadFacilities();
+  await payerStore.loadFacilities();
 
+  const authId = Number(route.query.authId);
+
+  if (authId) {
+    await openDrawer(authId);
   }
-);
+
+});
 
 const selectFacility =
   async (
@@ -97,42 +117,6 @@ const openDrawer =
       true;
 
   };
-
-const approve =
-(
-  payload: any
-) => {
-
-  console.log(
-    "Approve",
-    payload
-  );
-
-};
-
-const deny =
-(
-  payload: any
-) => {
-
-  console.log(
-    "Deny",
-    payload
-  );
-
-};
-
-const requestMoreInfo =
-(
-  payload: any
-) => {
-
-  console.log(
-    "Request More Info",
-    payload
-  );
-
-};
 </script>
 
 <template>
@@ -205,6 +189,25 @@ const requestMoreInfo =
 />
 
   </div>
+<v-snackbar
+  v-model="showSnackbar"
+  :color="snackbarColor"
+  location="top center"
+  timeout="3000"
+  elevation="10"
+  class="custom-snackbar"
+>
+  <div class="snackbar-content">
+    <span class="icon">
+      {{ snackbarIcon }}
+    </span>
+
+    <span class="message">
+      {{ snackbarMessage }}
+    </span>
+  </div>
+</v-snackbar>
+
 
 </div>
 
@@ -250,35 +253,12 @@ color:#1e293b;
 
 }
 
-.workspace{
-
-display:grid;
-
-grid-template-columns:
-
-480px
-1fr;
-
-gap:24px;
-
-align-items:start;
-
+.workspace {
+  width: 100%;
 }
 
-.left-panel{
-
-display:flex;
-
-flex-direction:column;
-
-}
-
-.right-panel{
-
-display:flex;
-
-flex-direction:column;
-
+.left-panel {
+  width: 100%;
 }
 
 @media

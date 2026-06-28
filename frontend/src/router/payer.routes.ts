@@ -1,67 +1,38 @@
-import type {
-  RouteRecordRaw
-} from "vue-router";
+import type { RouteRecordRaw } from "vue-router";
 
-import PayerDashboardPage
-from "../pages/payer/PayerDashboardPage.vue";
+import PayerDashboardPage from "../pages/Payer/PayerDashboardPage.vue";
+import RemindersPage from "../pages/Payer/RemindersPage.vue";
+import AuditHistoryPage from "../pages/Payer/AuditHistoryPage.vue";
+import PayerLayout from "../layouts/PayerLayout.vue";
 
-import RemindersPage
-from "../pages/payer/RemindersPage.vue";
+export const payerRoutes: RouteRecordRaw[] = [
+  {
+    path: "/payer",
+    component: PayerLayout,
 
-import AuditHistoryPage
-from "../pages/payer/AuditHistoryPage.vue";
+    children: [
+      {
+        path: "",
+        redirect: "/payer/requests"
+      },
 
-import PayerLayout
-from "../layouts/PayerLayout.vue";
+      {
+        path: "requests",
+        name: "PayerDashboard",     // <-- ADD
+        component: PayerDashboardPage
+      },
 
-export const payerRoutes:
-RouteRecordRaw[] = [
+      {
+        path: "reminders",
+        name: "PayerReminders",     // <-- ADD
+        component: RemindersPage
+      },
 
-{
-
-path:"/payer",
-
-component:PayerLayout,
-
-children:[
-
-{
-
-path:"",
-
-redirect:"/payer/requests"
-
-},
-
-{
-
-path:"requests",
-
-component:
-PayerDashboardPage
-
-},
-
-{
-
-path:"reminders",
-
-component:
-RemindersPage
-
-},
-
-{
-
-path:"history",
-
-component:
-AuditHistoryPage
-
-}
-
-]
-
-}
-
+      {
+        path: "history",
+        name: "PayerHistory",       // <-- ADD
+        component: AuditHistoryPage
+      }
+    ]
+  }
 ];

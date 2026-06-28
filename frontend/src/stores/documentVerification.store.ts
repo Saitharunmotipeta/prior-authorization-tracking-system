@@ -54,6 +54,18 @@ export const useDocumentVerificationStore =
       }),
 
       actions: {
+
+        resetDocuments() {
+    this.identificationVerified = false;
+    this.prescriptionVerified = false;
+    this.scanVerified = false;
+    this.doctorNotesVerified = false;
+    this.insuranceCardVerified = false;
+    this.remarks = "";
+    this.verificationStatus = "";
+    this.loading = false;
+    this.error = null;
+},
         async saveDocuments() {
           const encounterStore =
             useEncounterStore();
@@ -113,75 +125,42 @@ export const useDocumentVerificationStore =
           }
         },
 
-        async verifyDocuments() {
-          const encounterStore =
-            useEncounterStore();
+  async verifyDocuments(): Promise<boolean> {
+  const encounterStore = useEncounterStore();
 
-          if (
-            !encounterStore.encounterId
-          ) {
-            this.error =
-              "Encounter not found.";
+  if (!encounterStore.encounterId) {
+    this.error = "Encounter not found.";
+    return false;
+  }
 
-            return;
-          }
+  if (
+    !this.identificationVerified ||
+    !this.prescriptionVerified ||
+    !this.scanVerified ||
+    !this.doctorNotesVerified ||
+    !this.insuranceCardVerified
+  ) {
+    this.error = "All documents must be verified before proceeding.";
+    return false;
+  }
 
-          try {
-            this.loading = true;
+  try {
+    this.loading = true;
+    this.error = null;
 
-            this.error = null;
+    await verifyEncounter(encounterStore.encounterId);
 
-            await verifyEncounter(
-              encounterStore.encounterId
-            );
+    this.verificationStatus = "Verified";
 
-            this.verificationStatus =
-              "Verified";
-            
-            const authorizationStore =
-  useAuthorizationStore();
+    const authorizationStore = useAuthorizationStore();
+    authorizationStore.requestStatus = RequestStatus.ReadyForSubmission;
 
-authorizationStore.requestStatus =
-  RequestStatus.ReadyForSubmission;
-          }
-          catch (error) {
-            console.error(error);
-
-            this.error =
-              getErrorMessage(error);
-          }
-          finally {
-            this.loading = false;
-          }
-        },
-
-        clearError() {
-          this.error = null;
-        },
-
-        resetDocuments() {
-          this.identificationVerified =
-            false;
-
-          this.prescriptionVerified =
-            false;
-
-          this.scanVerified =
-            false;
-
-          this.doctorNotesVerified =
-            false;
-
-          this.insuranceCardVerified =
-            false;
-
-          this.remarks = "";
-
-          this.verificationStatus =
-            "Pending";
-
-          this.error = null;
-        }
-      }
-    }
-  );
+    return true; 
+  } catch (error) {
+    this.error = getErrorMessage(error);
+    return false; 
+  } finally {
+    this.loading = false;
+  }
+}
+  }});

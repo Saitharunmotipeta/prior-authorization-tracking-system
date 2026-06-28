@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from "vue-router";
 
-import AppNavbar
+import PayerNavbar
 from "../components/payer/PayerNavbar.vue";
 
 import PayerSidebar

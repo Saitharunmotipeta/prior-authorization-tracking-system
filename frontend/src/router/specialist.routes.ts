@@ -25,7 +25,7 @@ import AuthorizationSummaryPage
 from "../pages/specialist/AuthorizationSummaryPage.vue";
 
 import SpecialistRequestsPage
-from "@/pages/specialist/SpecialistRequestsPage.vue";
+from "../pages/specialist/SpecialistRequestsPage.vue";
 
 export const specialistRoutes:
   RouteRecordRaw[] = [

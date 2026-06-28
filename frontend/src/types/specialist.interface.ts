@@ -46,5 +46,5 @@ export interface CptCode {
 
 export interface IcdCode {
   icdCode: string;
-  icdDescription: string;
-}
+  icdDescription: string;}
+  
