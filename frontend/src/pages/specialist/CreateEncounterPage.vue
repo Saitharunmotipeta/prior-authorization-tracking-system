@@ -28,6 +28,11 @@ import {
   useAuthorizationStore
 } from "../../stores/authorization.store";
 
+const showSnackbar = ref(false);
+const snackbarMessage = ref("");
+const snackbarColor = ref("success");
+const snackbarIcon = ref("✅");
+
 const router = useRouter();
 
 const specialistStore =
@@ -59,42 +64,94 @@ const {
 const conditionType =
   ref(0);
 
-const createEncounter =
-  async () => {
-    if (!patientLookup.value)
-      return;
+// const createEncounter =
+//   async () => {
+//     if (!patientLookup.value)
+//       return;
 
-    try {
-      await encounterStore
-        .createEncounter({
-          patientId:
-            patientLookup.value
-              .patientId,
+//     try {
+//       await encounterStore
+//         .createEncounter({
+//           patientId:
+//             patientLookup.value
+//               .patientId,
 
-          facilityId:
-            selectedFacilityId.value!,
+//           facilityId:
+//             selectedFacilityId.value!,
 
-          departmentId:
-            selectedDepartmentId.value!,
+//           departmentId:
+//             selectedDepartmentId.value!,
 
-          conditionType:
-            conditionType.value
-        });
+//           conditionType:
+//             conditionType.value
+//         });
 
+//       router.push({
+//         path:
+//           "/specialist/document-verification",
+
+//         query: {
+//           encounterId:
+//             encounterStore.encounterId
+//         }
+//       });
+//     }
+//     catch (error) {
+//       console.error(error);
+//     }
+//   };
+
+const createEncounter = async () => {
+  if (!patientLookup.value) return;
+
+  try {
+    await encounterStore.createEncounter({
+      patientId: patientLookup.value.patientId,
+      facilityId: selectedFacilityId.value!,
+      departmentId: selectedDepartmentId.value!,
+      conditionType: conditionType.value
+    });
+
+    // ✅ SHOW SUCCESS MESSAGE
+    showMessage("success", "Encounter created successfully");
+
+    // ✅ small delay so user sees message (optional but nice)
+    setTimeout(() => {
       router.push({
-        path:
-          "/specialist/document-verification",
-
+        path: "/specialist/document-verification",
         query: {
-          encounterId:
-            encounterStore.encounterId
+          encounterId: encounterStore.encounterId
         }
       });
-    }
-    catch (error) {
-      console.error(error);
-    }
-  };
+    }, 800);
+
+  } catch (error) {
+    console.error(error);
+
+    // ✅ OPTIONAL ERROR MESSAGE
+    showMessage("error", "Failed to create encounter");
+  }
+};
+
+  const showMessage = (
+  type: "success" | "error" | "warning",
+  message: string
+) => {
+  snackbarMessage.value = message;
+
+  if (type === "success") {
+    snackbarColor.value = "success";
+    snackbarIcon.value = "✅";
+  } else if (type === "error") {
+    snackbarColor.value = "error";
+    snackbarIcon.value = "❌";
+  } else {
+    snackbarColor.value = "warning";
+    snackbarIcon.value = "⚠️";
+  }
+
+  showSnackbar.value = true;
+};
 </script>
 
 <template>
@@ -275,6 +332,27 @@ const createEncounter =
 
     </div>
 
+
+    <v-snackbar
+  v-model="showSnackbar"
+  :color="snackbarColor"
+  location="top center"
+  timeout="3000"
+  elevation="10"
+  class="custom-snackbar"
+>
+  <div class="snackbar-content">
+    <span class="icon">
+      {{ snackbarIcon }}
+    </span>
+
+    <span class="message">
+      {{ snackbarMessage }}
+    </span>
+  </div>
+</v-snackbar>
+
+
   </div>
 </template>
 
@@ -405,5 +483,26 @@ select {
 
 .primary-button:hover {
   opacity: 0.95;
+}
+
+.custom-snackbar {
+  max-width: 420px !important;
+  margin: auto;
+  border-radius: 12px !important;
+}
+
+.snackbar-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+.message {
+  font-weight: 600;
+  font-size: 14px;
 }
 </style>

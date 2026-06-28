@@ -74,6 +74,20 @@ const allCptCodes =
 const allIcdCodes =
   ref<any[]>([]);
 
+const showSnackbar = ref(false);
+const snackbarMessage = ref("");
+const snackbarType = ref("success"); // success | error
+
+
+const showMessage = (
+  type: "success" | "error",
+  message: string
+) => {
+  snackbarMessage.value = message;
+  snackbarType.value = type;
+  showSnackbar.value = true;
+};
+
 const searchCpt = () => {
 
   cptResults.value =
@@ -143,53 +157,60 @@ const selectIcd =
     icdResults.value = [];
   };
 
-const addService =
-  async () => {
+const addService = async () => {
+  try {
+    await authorizationStore.addService({
+      cptCode: selectedCptCode.value,
+      icdCode: selectedIcdCode.value,
+      notes: notes.value
+    });
 
-    await authorizationStore
-      .addService({
-        cptCode:
-          selectedCptCode.value,
+    // ✅ SUCCESS
+    showMessage("success", "Service added successfully ✅");
 
-        icdCode:
-          selectedIcdCode.value,
-
-        notes:
-          notes.value
-      });
-
+    // reset fields
     cptSearchText.value = "";
     icdSearchText.value = "";
-
     selectedCptCode.value = "";
     selectedIcdCode.value = "";
-
     notes.value = "";
-
     cptResults.value = [];
     icdResults.value = [];
-  };
 
-const goToSummary =
-async () => {
+  } catch (error) {
+    console.error(error);
 
-    try {
-
-        await authorizationStore
-            .uploadServices();
-
-        router.push(
-            "/specialist/authorization-summary"
-        );
-
-    }
-    catch (error) {
-
-        console.error(error);
-
-    }
-
+    // ❌ ERROR
+    showMessage("error", "Failed to add service");
+  }
 };
+
+const goToSummary = async () => {
+  try {
+
+    await authorizationStore.uploadServices();
+
+    // ✅ SUCCESS MESSAGE
+    showMessage(
+      "success",
+      "Authorization request created successfully ✅"
+    );
+
+    // ✅ Delay navigation (important)
+    setTimeout(() => {
+      router.push("/specialist/authorization-summary");
+    }, 800);
+
+  } catch (error) {
+    console.error(error);
+
+    showMessage(
+      "error",
+      "Failed to create authorization request"
+    );
+  }
+};
+
 </script>
 <template>
 
@@ -406,6 +427,24 @@ Review Authorization
 
 </div>
 
+<v-snackbar
+  v-model="showSnackbar"
+  :color="snackbarType === 'success' ? 'success' : 'error'"
+  location="top center"
+  timeout="3000"
+  elevation="10"
+>
+  <div class="snackbar-content">
+    <span class="icon">
+      {{ snackbarType === 'success' ? '✅' : '❌' }}
+    </span>
+
+    <span class="message">
+      {{ snackbarMessage || "Action completed" }}
+    </span>
+  </div>
+</v-snackbar>
+
 </div>
 
 </template>
@@ -579,6 +618,21 @@ textarea {
 .description {
   font-size: 14px;
   color: #475569;
+}
+
+.snackbar-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+.message {
+  font-weight: 600;
+  font-size: 14px;
 }
 
 </style>
