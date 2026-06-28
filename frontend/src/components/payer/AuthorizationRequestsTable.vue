@@ -213,38 +213,25 @@ computed(() => {
           <td>
             {{ request.patientName }}
           </td>
-
+          
           <td>
-
-            <span
-              class="priority"
-              :class="{
-                normal:
-                  request.priority ===
-                  '0',
-
-                urgent:
-                  request.priority ===
-                  '1',
-
-                emergency:
-                  request.priority ===
-                  '2'
-              }"
-            >
-
-              {{
-                request.priority === "0"
-                  ? "Normal"
-                  : request.priority === "1"
-                  ? "Urgent"
-                  : "Emergency"
-              }}
-
-            </span>
-
-          </td>
-
+          <span
+            class="priority"
+            :class="{
+              normal: Number(request.priority) === 1,
+              urgent: Number(request.priority) === 2,
+              emergency: Number(request.priority) === 3
+            }"
+          >
+            {{
+              Number(request.priority) === 1
+                ? "Normal"
+                : Number(request.priority) === 2
+                ? "Urgent"
+                : "Emergency"
+            }}
+          </span>
+        </td>
           <td>
 
             <AppStatusBadge
@@ -414,36 +401,51 @@ Next
   background:#f8fafc;
 }
 
-.priority{
+.priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
-  padding:5px 12px;
+  min-width: 90px;
+  height: 32px;
 
-  border-radius:20px;
+  padding: 0 14px;
 
-  font-size:13px;
+  border-radius: 999px;
 
-  font-weight:600;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
 }
 
-.normal{
-
-  background:#e0f2fe;
-
-  color:#0369a1;
+.priority.normal {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
-.urgent{
-
-  background:#fef3c7;
-
-  color:#b45309;
+.priority.urgent {
+  background: #fef3c7;
+  color: #b45309;
 }
 
-.emergency{
+.priority.emergency {
+  background: #fee2e2;
+  color: #dc2626;
+}
 
-  background:#fee2e2;
+.normal {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
 
-  color:#b91c1c;
+.urgent {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.emergency {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .view-btn{
