@@ -49,9 +49,11 @@ const emit =
     >
       No authorization requests found.
     </div>
-
-    <table
+    <div
       v-else
+      class="table-wrapper"
+    >
+    <table
       class="request-table"
     >
 
@@ -189,6 +191,7 @@ const emit =
       </tbody>
 
     </table>
+    </div>
 
   </div>
 
@@ -244,11 +247,10 @@ const emit =
   font-weight:600;
 }
 
-.request-table{
-
-  width:100%;
-
-  border-collapse:collapse;
+.request-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
 }
 
 .request-table th{
@@ -345,5 +347,27 @@ const emit =
 
   color:#64748b;
 }
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
+.request-table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+}
+
+.request-table th {
+  white-space: nowrap;
+}
+
+.request-table td {
+  word-break: break-word;
+}
+
+.request-table td:nth-child(2) {
+  white-space: normal;
+}
 </style>

@@ -219,35 +219,12 @@ color:#1e293b;
 
 }
 
-.workspace{
-
-display:grid;
-
-grid-template-columns:
-
-480px
-1fr;
-
-gap:24px;
-
-align-items:start;
-
+.workspace {
+  width: 100%;
 }
 
-.left-panel{
-
-display:flex;
-
-flex-direction:column;
-
-}
-
-.right-panel{
-
-display:flex;
-
-flex-direction:column;
-
+.left-panel {
+  width: 100%;
 }
 
 @media
