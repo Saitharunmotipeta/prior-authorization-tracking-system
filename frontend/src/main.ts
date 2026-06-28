@@ -7,7 +7,7 @@ from "pinia-plugin-persistedstate";
 
 import App from "./App.vue";
 import router from "./router";
-import "primeicons/primeicons.css";
+// import "primeicons/primeicons.css";
 
 
 

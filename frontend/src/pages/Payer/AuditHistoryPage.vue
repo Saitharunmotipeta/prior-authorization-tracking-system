@@ -21,41 +21,40 @@ onMounted(() => {
   payerStore.loadAuditHistory(); 
 });
 </script><template>
-  <div
-  v-for="audit in auditHistory"
-  :key="audit.auditId"
-  class="audit-card"
->
 
-  <!-- ✅ HEADER -->
-  <div class="audit-header">
-    <span class="badge" :class="audit.actionType">
-      {{ formatAction(audit.actionType) }}
-    </span>
+  <div>
 
-    <span class="date">
-      {{ formatDate(audit.createdAt) }}
-    </span>
-  </div>
+    <div
+      v-for="audit in auditHistory"
+      :key="audit.auditId"
+      class="audit-card"
+    >
 
-  <!-- ✅ IMPORTANT: SHOW REASON -->
-  <div class="remarks">
-    {{ audit.remarks || "No additional details provided" }}
-  </div>
-
-  <!-- ✅ SHOW ONLY VALID CHANGE -->
-  <div
-    v-if="
-      audit.oldValue &&
-      audit.newValue &&
-      audit.oldValue !== audit.newValue
-    "
-    class="change"
-  >
-    {{ audit.oldValue }} → {{ audit.newValue }}
-  </div>
-
+      <!-- ✅ CONTEXT LINE -->
+     <div class="context">
+  <span>AuthId: {{ audit.authId }}</span>
+  <span>PatientId: {{ audit.patientId }}</span>
+  <span>Facility: {{ audit.facilityName }}</span>
 </div>
+
+      <!-- ✅ STATUS + DATE -->
+      <div class="audit-header">
+        <span
+          class="badge"
+          :class="audit.actionType"
+        >
+          {{ formatAction(audit.actionType) }}
+        </span>
+
+        <span class="date">
+          {{ formatDate(audit.createdAt) }}
+        </span>
+      </div>
+
+    </div>
+
+  </div>
+
 </template>
 
 <style>
@@ -98,10 +97,22 @@ onMounted(() => {
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
-.audit-top {
+.context {
+  font-size: 13px;
+  color: #475569;
+
+  margin-bottom: 10px;
+
+  display: flex;
+  gap: 24px;
+
+  font-weight: 500;
+}
+
+.audit-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: center;
 }
 
 .badge {
@@ -111,6 +122,7 @@ onMounted(() => {
   font-size: 14px;
 }
 
+/* ✅ Colors */
 .badge.Approved {
   background: #dcfce7;
   color: #16a34a;
@@ -130,15 +142,9 @@ onMounted(() => {
   font-size: 12px;
   color: #6b7280;
 }
-
-.remarks {
-  margin: 8px 0;
-  font-size: 14px;
-  color: #374151;
-}
-
-.change {
-  font-size: 13px;
-  color: #2563eb;
+.context span {
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 </style>
