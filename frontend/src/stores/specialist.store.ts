@@ -31,6 +31,10 @@ import type {
   SpecialistReminderDto
 } from "../types/specialist.interface";
 
+import type {
+AuthorizationTimeline
+} from "../types/authorization.interface";
+import type { AuthorizationServiceDetail } from "../types/payer.interface";
 
 export const useSpecialistStore =
   defineStore(
@@ -47,7 +51,7 @@ export const useSpecialistStore =
   [] as AuthorizationRequest[],
 
         authorizationServices:
-          [] as AuthorizationService[],
+          [] as AuthorizationServiceDetail[],
 
          
   authorizationTimeline: [] as AuthorizationTimeline[],

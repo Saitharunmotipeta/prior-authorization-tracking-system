@@ -1,5 +1,6 @@
 ﻿using Bogus;
 using Bogus.Extensions;
+using PriorAuthorization.Shared.Entities;
 
 namespace PriorAuthorization.DataSeeder.Generators
 {
@@ -24,7 +25,8 @@ namespace PriorAuthorization.DataSeeder.Generators
 
     public static class AuthorizationRequestGenerator
     {
-        public static List<AuthorizationRequest> Generate(List<int> encounterIds)
+        public static List<AuthorizationRequest> Generate(List<int> encounterIds, List<int> payerIds)
+
         {
             var faker = new Faker();
 
@@ -56,7 +58,7 @@ namespace PriorAuthorization.DataSeeder.Generators
                 var request = new AuthorizationRequest
                 {
                     EncounterId = encounterId,
-                    PayerId = 1,
+                     PayerId = faker.PickRandom(payerIds),
 
                     Priority = priority,
                     Status = status,

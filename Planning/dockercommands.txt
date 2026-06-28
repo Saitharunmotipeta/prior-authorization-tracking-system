@@ -1,0 +1,8 @@
+From frontend folder
+docker build -t priorauth-frontend .
+docker run -d --name priorauth-frontend -p 5173:80 priorauth-frontend
+
+From root
+docker build -t specialist-api -f PriorAuthorization.Specialist.API/Dockerfile .
+docker build -t manager-api -f PriorAuthorization.Manager.API/Dockerfile .
+docker build -t payer-api -f PriorAuthorization.Payer.API/Dockerfile .

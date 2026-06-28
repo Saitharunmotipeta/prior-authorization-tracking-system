@@ -33,7 +33,7 @@ const {
   facilityComparison,
   topPerformingPayers,
   poorPerformingPayers,
-  delayTrend
+  delayTrends
 } = storeToRefs(dashboardStore);
 
 const activeTab = ref("overview");
@@ -189,7 +189,7 @@ onMounted(async () => {
             />
 
             <DelayTrendChart
-              :trends="delayTrend"
+              :trends="delayTrends"
             />
           </div>
         </template>

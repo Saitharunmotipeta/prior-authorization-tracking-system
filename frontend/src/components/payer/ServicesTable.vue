@@ -5,12 +5,12 @@ import {
 } from "lucide-vue-next";
 
 import type {
-  AuthorizationService
+  AuthorizationServiceDetail
 } from "../../types/payer.interface";
 
 defineProps<{
   services:
-    AuthorizationService[];
+    AuthorizationServiceDetail[];
 }>();
 </script>
 

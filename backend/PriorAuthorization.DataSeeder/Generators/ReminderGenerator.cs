@@ -1,4 +1,5 @@
 ﻿using Bogus;
+using PriorAuthorization.Shared.Entities;
 
 namespace PriorAuthorization.DataSeeder.Generators
 {
@@ -20,7 +21,8 @@ namespace PriorAuthorization.DataSeeder.Generators
     public static class ReminderGenerator
     {
         public static List<Reminder> Generate(
-            List<(int AuthId, int Status)> authData)
+    List<(int AuthId, int Status)> authData,
+    List<int> payerIds)
         {
             var faker = new Faker();
             var reminders = new List<Reminder>();
@@ -36,7 +38,7 @@ namespace PriorAuthorization.DataSeeder.Generators
                     var reminder = new Reminder
                     {
                         AuthId = authId,
-                        PayerId = 1,
+                        PayerId = faker.PickRandom(payerIds),
 
                         Category = faker.PickRandom(1, 2, 3, 4),
                         Status = faker.PickRandom(1, 2), // Pending / Completed

@@ -7,7 +7,6 @@ import { storeToRefs } from "pinia";
 
 import {
   User,
-  Building2,
   ClipboardPlus
 } from "lucide-vue-next";
 
@@ -119,7 +118,7 @@ const createEncounter =
       <AppStatusBadge
         :status="requestStatus"
       />
-
+   
     </div>
 
     <AppError

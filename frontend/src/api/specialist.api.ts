@@ -1,6 +1,5 @@
 import {
   specialistApiClient,
-  managerApiClient,
   payerApiClient
 } from "./axios";
 
@@ -15,7 +14,6 @@ import type {
 
 
 import type {
-  AddAuthorizationServiceRequest,
   AddAuthorizationServiceListRequest,
   AuthorizationService
 } from "../types/authorization-service.interface";
