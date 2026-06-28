@@ -3,6 +3,8 @@ import {
   Eye
 } from "lucide-vue-next";
 
+import { ref, computed } from "vue";
+
 import AppStatusBadge
 from "../common/AppStatusBadge.vue";
 
@@ -10,6 +12,7 @@ import type {
   AuthorizationRequestSummary
 } from "../../types/payer.interface";
 
+const props =
 defineProps<{
   requests:
     AuthorizationRequestSummary[];
@@ -22,6 +25,96 @@ const emit =
       authId: number
     ): void;
   }>();
+
+const searchText =
+  ref("");
+
+const currentPage =
+  ref(1);
+
+const pageSize =
+  8;
+
+const filteredRequests =
+computed(() => {
+
+  const keyword =
+    searchText.value
+      .trim()
+      .toLowerCase();
+
+  const sorted =
+    [...props.requests]
+      .sort((a, b) => {
+
+        const dateA =
+          a.submittedAt
+            ? new Date(a.submittedAt).getTime()
+            : 0;
+
+        const dateB =
+          b.submittedAt
+            ? new Date(b.submittedAt).getTime()
+            : 0;
+
+        return dateB - dateA;
+
+      });
+
+  if (!keyword)
+    return sorted;
+
+  return sorted.filter(r =>
+
+      r.authId
+        .toString()
+        .includes(keyword)
+
+      ||
+
+      r.patientName
+        .toLowerCase()
+        .includes(keyword)
+
+      ||
+
+      r.priority
+        .toLowerCase()
+        .includes(keyword)
+
+      ||
+
+      r.status
+        .toLowerCase()
+        .includes(keyword)
+
+  );
+
+});
+
+const totalPages =
+computed(() =>
+
+  Math.ceil(
+    filteredRequests.value.length /
+    pageSize
+  )
+
+);
+
+const paginatedRequests =
+computed(() => {
+
+  const start =
+    (currentPage.value - 1) *
+    pageSize;
+
+  return filteredRequests.value.slice(
+    start,
+    start + pageSize
+  );
+
+});
 </script>
 
 <template>
@@ -34,10 +127,22 @@ const emit =
         Authorization Requests
       </h2>
 
-      <span class="count">
-        {{ requests.length }}
-        Requests
-      </span>
+      <div class="toolbar">
+
+  <span class="count">
+
+    {{ filteredRequests.length }}
+    Requests
+
+  </span>
+
+  <input
+    v-model="searchText"
+    class="search-box"
+    placeholder="Search Auth Id, Patient, Status or Priority..."
+  />
+
+</div>
 
     </div>
 
@@ -94,7 +199,7 @@ const emit =
         <tr
           v-for="
             request
-            in requests
+            in paginatedRequests
           "
           :key="
             request.authId
@@ -191,6 +296,36 @@ const emit =
       </tbody>
 
     </table>
+
+    <div
+  class="pagination"
+  v-if="totalPages > 1"
+>
+
+<button
+  @click="currentPage--"
+  :disabled="currentPage === 1"
+>
+Previous
+</button>
+
+<span>
+
+Page
+{{ currentPage }}
+of
+{{ totalPages }}
+
+</span>
+
+<button
+  @click="currentPage++"
+  :disabled="currentPage === totalPages"
+>
+Next
+</button>
+
+</div>
     </div>
 
   </div>
@@ -369,5 +504,67 @@ const emit =
 
 .request-table td:nth-child(2) {
   white-space: normal;
+}
+
+.toolbar{
+
+display:flex;
+
+align-items:center;
+
+gap:16px;
+
+}
+
+.search-box{
+
+padding:10px 14px;
+
+border:1px solid #d1d5db;
+
+border-radius:8px;
+
+width:280px;
+
+font-size:14px;
+
+}
+
+.pagination{
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+gap:16px;
+
+margin-top:20px;
+
+}
+
+.pagination button{
+
+padding:8px 18px;
+
+border:none;
+
+border-radius:8px;
+
+background:#2563eb;
+
+color:white;
+
+cursor:pointer;
+
+}
+
+.pagination button:disabled{
+
+background:#cbd5e1;
+
+cursor:not-allowed;
+
 }
 </style>
