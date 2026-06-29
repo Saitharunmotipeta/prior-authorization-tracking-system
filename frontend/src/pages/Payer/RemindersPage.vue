@@ -75,9 +75,6 @@ onMounted(fetchReminders);
   </label>
 </div>
   <div class="card">
-<<<<<<< HEAD
-    <h1>Reminders </h1>
-=======
    <div class="reminder-header">
   <h2>Reminders</h2>
 
@@ -90,7 +87,6 @@ onMounted(fetchReminders);
 </div>
 
 
->>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 
     <p v-if="loading">Loading...</p>
 
@@ -176,7 +172,6 @@ onMounted(fetchReminders);
 .status strong {
   color: #0072ce;
 }
-<<<<<<< HEAD
 .reminder-controls {
   display: flex;
   justify-content: flex-end;
@@ -228,7 +223,7 @@ onMounted(fetchReminders);
 
 .toggle-text {
   color: #374151;
-=======
+}
 
 .reminder-header {
   display: flex;
@@ -247,6 +242,5 @@ onMounted(fetchReminders);
 
 .icon {
   margin-left: 6px;
->>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 }
 </style>
