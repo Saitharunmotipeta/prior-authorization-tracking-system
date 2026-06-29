@@ -1,16 +1,32 @@
 <script setup lang="ts">
+<<<<<<< HEAD
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 //import type { AuthorizationRequest } from "../../types/specialist.interface";
+=======
+import {
+  ref,
+  onMounted,
+  computed,
+  watch
+} from "vue";
+
+import {
+  storeToRefs
+} from "pinia";
+>>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 
 //const selectedRequest = ref<AuthorizationRequest | null>(null);
 import {
   useSpecialistStore
 } from "../../stores/specialist.store";
 
+<<<<<<< HEAD
 const route = useRoute();
 
+=======
+>>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 const specialistStore =
   useSpecialistStore();
 
@@ -24,6 +40,121 @@ const {
     specialistStore
   );
 
+<<<<<<< HEAD
+=======
+const currentPage =
+  ref(1);
+
+const pageSize =
+  8;
+
+const searchText =
+  ref("");
+
+onMounted(() => {
+
+  specialistStore
+    .loadAuthorizationRequests();
+
+});
+
+const filteredRequests =
+computed(() => {
+
+  if (
+    !searchText.value.trim()
+  ) {
+
+    return authorizationRequests.value;
+
+  }
+
+  const keyword =
+    searchText.value
+      .toLowerCase();
+
+  return authorizationRequests.value.filter(
+    request =>
+
+      request.authId
+        .toString()
+        .includes(keyword)
+
+      ||
+
+      request.patientName
+        .toLowerCase()
+        .includes(keyword)
+
+      ||
+
+      request.payerName
+        .toLowerCase()
+        .includes(keyword)
+
+      ||
+
+      request.status
+        .toLowerCase()
+        .includes(keyword)
+
+      ||
+
+      request.priority
+        .toLowerCase()
+        .includes(keyword)
+
+  );
+
+});
+
+const totalPages =
+computed(() =>
+  Math.max(
+    1,
+    Math.ceil(
+      filteredRequests.value.length /
+      pageSize
+    )
+  )
+);
+
+const paginatedRequests =
+computed(() => {
+
+  const start =
+    (currentPage.value - 1) *
+    pageSize;
+
+  return filteredRequests.value.slice(
+    start,
+    start + pageSize
+  );
+
+});
+
+watch(
+  searchText,
+  () => {
+
+    currentPage.value = 1;
+
+  }
+);
+
+const formatDate = (
+  date: string | null
+) => {
+
+  if (!date)
+    return "-";
+
+  return new Date(date)
+    .toLocaleDateString();
+
+};
+
+>>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 const showHistoryModal =
   ref(false);
 
@@ -37,6 +168,7 @@ const formatDate = (
   date: string | null
 ) => {
 
+<<<<<<< HEAD
   if (!date)
     return "-";
 
@@ -45,6 +177,9 @@ const formatDate = (
 
 };
 const viewRequestHistory = async (authId: number) => {
+=======
+  console.log("Clicked:", authId);
+>>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 
   selectedAuthId.value = authId;
 
@@ -52,23 +187,44 @@ const viewRequestHistory = async (authId: number) => {
 
   authorizationTimeline.value = [];
 
+<<<<<<< HEAD
   await specialistStore.loadAuthorizationDetails(authId);
 
   await specialistStore.loadAuthorizationServices(authId);
 
   await specialistStore.loadAuthorizationTimeline(authId); // <-- Missing
+=======
+  await specialistStore.loadAuthorizationServices(authId);
+
+  console.log(
+    "Services:",
+    authorizationServices.value
+  );
+>>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 
   showHistoryModal.value = true;
 
+<<<<<<< HEAD
 };
 const closeHistoryModal = () => {
+=======
+const closeHistoryModal =
+() => {
+>>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 
-  showHistoryModal.value = false;
+  showHistoryModal.value =
+    false;
 
-  showTimeline.value = false;
+  showTimeline.value =
+    false;
 
-  selectedAuthId.value = null;
+  selectedAuthId.value =
+    null;
 
+  authorizationTimeline.value =
+    [];
+
+<<<<<<< HEAD
   authorizationTimeline.value = [];
 
   specialistStore.authorizationDetails = null;
@@ -93,10 +249,35 @@ onMounted(async () => {
   }
 
 });
+=======
+};
+
+const showTimeline =
+  ref(false);
+
+const viewTimeline =
+async () => {
+
+  if (
+    !selectedAuthId.value
+  )
+    return;
+
+  await specialistStore
+    .loadAuthorizationTimeline(
+      selectedAuthId.value
+    );
+
+  showTimeline.value =
+    true;
+
+};
+>>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 </script>
 <template>
 
 <div class="table-card">
+<<<<<<< HEAD
 
   <div class="table-header">
 
@@ -212,14 +393,188 @@ onMounted(async () => {
   </table>
 
 
+=======
+<div class="table-header">
+
+  <h3>
+    Authorization Requests
+  </h3>
+
+  <div class="toolbar">
+
+    <span class="count">
+
+      {{ filteredRequests.length }}
+      Requests
+
+    </span>
+
+    <input
+      v-model="searchText"
+      class="search-box"
+      placeholder="Search Authorization Id, Patient, Payer, Status..."
+    />
+
+  </div>
+
+>>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 </div>
 
 
 
 
 
+<<<<<<< HEAD
 <!-- DRAWER -->
 <!-- DRAWER -->
+=======
+<th>Patient</th>
+
+<th>Payer</th>
+
+<th>Status</th>
+
+<th>Priority</th>
+
+<th>Estimated Amount</th>
+
+<th>Action</th>
+
+</tr>
+
+</thead>
+<tbody>
+
+<tr
+v-for="request in paginatedRequests"
+:key="request.authId"
+>
+
+<td>
+
+{{ request.authId }}
+
+</td>
+
+<td>
+
+{{ request.patientName }}
+
+</td>
+
+<td>
+
+{{ request.payerName }}
+
+</td>
+
+<td>
+
+<span
+class="badge"
+:class="'status-' + request.status.toLowerCase().replace(/\s+/g,'-')"
+>
+
+{{ request.status }}
+
+</span>
+
+</td>
+
+<td>
+
+<span
+class="badge"
+:class="'priority-' + request.priority.toLowerCase()"
+>
+
+{{ request.priority }}
+
+</span>
+
+</td>
+
+<td>
+
+{{ request.estimatedAmount }}
+
+</td>
+
+<td>
+
+<button
+class="view-button"
+@click="viewRequestHistory(request.authId)"
+>
+
+<i class="pi pi-eye"></i>
+
+View
+
+</button>
+
+</td>
+
+</tr>
+
+<tr
+v-if="paginatedRequests.length===0"
+>
+
+<td
+colspan="7"
+class="empty-row"
+>
+
+No authorization requests found.
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+<div
+class="pagination"
+v-if="filteredRequests.length"
+>
+
+<button
+@click="currentPage--"
+:disabled="currentPage===1"
+>
+
+Previous
+
+</button>
+
+<span>
+
+Page
+
+{{ currentPage }}
+
+of
+
+{{ totalPages }}
+
+</span>
+
+<button
+@click="currentPage++"
+:disabled="currentPage===totalPages"
+>
+
+Next
+
+</button>
+
+</div>
+
+</div>
+>>>>>>> 760f8237fdb9ee8c2ffed1e8aa518ba9828ee716
 
 <div
   v-if="showHistoryModal"
@@ -1456,5 +1811,135 @@ color:#475569;
 .timeline-content span{
 font-size:13px;
 color:#94a3b8;
+}
+
+.pagination{
+
+display:flex;
+
+justify-content: center;
+
+align-items:center;
+
+gap:16px;
+
+padding:20px;
+
+border-top:1px solid #e5e7eb;
+
+}
+
+.pagination button{
+
+padding:8px 16px;
+
+border:none;
+
+border-radius:8px;
+
+background:#2563eb;
+
+color:white;
+
+cursor:pointer;
+
+font-weight:600;
+
+}
+
+.pagination button:disabled{
+
+background:#cbd5e1;
+
+cursor:not-allowed;
+
+}
+
+.pagination span{
+
+font-weight:600;
+
+color:#475569;
+
+}
+
+.table-header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:20px;
+
+gap:20px;
+
+}
+
+.title{
+
+margin:0;
+
+font-size:22px;
+
+font-weight:600;
+
+color:#1e293b;
+
+}
+
+.toolbar{
+
+display:flex;
+
+align-items:center;
+
+gap:16px;
+
+margin-left:auto;
+
+}
+
+.count{
+
+font-size:14px;
+
+font-weight:600;
+
+color:#64748b;
+
+white-space:nowrap;
+
+}
+
+.search-box{
+
+width:320px;
+
+padding:10px 14px;
+
+border:1px solid #d1d5db;
+
+border-radius:8px;
+
+font-size:14px;
+
+background:#fff;
+
+transition:.2s;
+
+}
+
+.search-box:focus{
+
+outline:none;
+
+border-color:#2563eb;
+
+box-shadow:
+0 0 0 3px
+rgb(37 99 235 / 15%);
+
 }
 </style>

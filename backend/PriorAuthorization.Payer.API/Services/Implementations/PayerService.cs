@@ -687,34 +687,40 @@ public class PayerService : IPayerService
         try
         {
             var result = await _context.AuditHistories
-                .AsNoTracking()
+    .AsNoTracking()
 
-                // ✅ Only payer actions
-                .Where(a =>
-                    a.PerformedByRole == (byte)UserRole.Payer &&
+    .Where(a =>
+        a.PerformedByRole == (byte)UserRole.Payer &&
+        (
+            a.ActionType == (byte)AuditActionType.Approved ||
+            a.ActionType == (byte)AuditActionType.Denied ||
+            a.ActionType == (byte)AuditActionType.RequestedMoreInfo
+        )
+    )
 
-                    (
-                        a.ActionType == (byte)AuditActionType.Approved ||
-                        a.ActionType == (byte)AuditActionType.Denied ||
-                        a.ActionType == (byte)AuditActionType.RequestedMoreInfo
-                    )
-                )
+    .Include(a => a.Auth)
+        .ThenInclude(auth => auth.Encounter)
+            .ThenInclude(enc => enc.Facility) 
 
-                // ✅ Sort latest first
-                .OrderByDescending(a => a.CreatedAt)
+    .Include(a => a.Auth)
+        .ThenInclude(auth => auth.Encounter)
+            .ThenInclude(enc => enc.Patient)
 
-                // ✅ Projection
-                .Select(a => new AuditHistoryDto
-                {
-                    AuditId = a.AuditId,
-                    AuthId = a.AuthId,
-                    ActionType = ((AuditActionType)a.ActionType).ToString(),
-                    Remarks = a.Remarks,
-                    OldValue = a.OldValue,
-                    NewValue = a.NewValue,
-                    CreatedAt = a.CreatedAt
-                })
-                .ToListAsync();
+    .OrderByDescending(a => a.CreatedAt)
+
+    .Select(a => new AuditHistoryDto
+    {
+        AuditId = a.AuditId,
+        AuthId = a.AuthId,
+        ActionType = ((AuditActionType)a.ActionType).ToString(),
+        CreatedAt = a.CreatedAt,
+
+        PatientId = a.Auth!.Encounter!.Patient!.MrnNumber,
+
+        FacilityName = a.Auth.Encounter.Facility!.FacilityName 
+    })
+
+    .ToListAsync();
 
             _logger.LogInformation("Fetched {Count} audit history records", result.Count);
 
