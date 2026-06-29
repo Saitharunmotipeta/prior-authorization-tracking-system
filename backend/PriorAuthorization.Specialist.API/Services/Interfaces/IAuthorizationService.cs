@@ -1,6 +1,7 @@
 ﻿using PriorAuthorization.Shared.Entities;
 using PriorAuthorization.Shared.Enums;
 using PriorAuthorization.Specialist.API.DTOs;
+using System.Threading.Tasks;
 
 namespace PriorAuthorization.Specialist.API.Services.Interfaces;
 
@@ -34,8 +35,10 @@ public interface IAuthorizationService
     Task<List<AuthorizationListItemDto>>
     GetAuthorizationsAsync(
         RequestStatus? status);
+    Task<AuthorizationDetailsDto?> GetAuthorizationDetailsAsync(int authId);
 
     Task<List<AuthorizationListItemDto>>
         GetAwaitingReviewAuthorizationsAsync();
+    Task<List<SpecialistReminderDto>> GetRemindersAsync();
 
 }

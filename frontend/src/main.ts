@@ -1,78 +1,30 @@
-// import { createApp } from "vue";
-// import { createPinia } from "pinia";
-
-// import 'bootstrap/dist/css/bootstrap.min.css';
-// import piniaPluginPersistedstate
-// from "pinia-plugin-persistedstate";
-
-// import App from "./App.vue";
-// import router from "./router";
-// // import "primeicons/primeicons.css";
-
-
-
-
-// const app = createApp(App);
-
-// const pinia = createPinia();
-// app.use(pinia);
-// pinia.use(
-//   piniaPluginPersistedstate
-// );
-
-
-
-// import { createVuetify } from 'vuetify';
-// import 'vuetify/styles'; 
-
-// const vuetify = createVuetify();
-
-
-// // createApp(App)
-// //   .use(vuetify)
-// //   .mount('#app');
-
-// // app.use(router);
-
-// // app.mount("#app");
-
-
-// app.use(vuetify)
-// app.use(router)
-// app.mount('#app')
-
-
-
 import { createApp } from "vue";
 import { createPinia } from "pinia";
-
-import 'bootstrap/dist/css/bootstrap.min.css';
-
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 
 import App from "./App.vue";
 import router from "./router";
 
-/* ✅ Vuetify setup */
-import { createVuetify } from 'vuetify'
-import 'vuetify/styles'
+import "bootstrap/dist/css/bootstrap.min.css";
+import "primeicons/primeicons.css";
 
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
+import "vuetify/styles";
+import { createVuetify } from "vuetify";
 
-const vuetify = createVuetify({
-  components,
-  directives,
-})
-
-/* ✅ App setup */
+// 1. Initialize Vue App
 const app = createApp(App);
 
+// 2. Initialize Vuetify
+const vuetify = createVuetify();
+app.use(vuetify);
+
+// 3. Initialize Pinia with Persistence Plugin
 const pinia = createPinia();
-app.use(pinia);
 pinia.use(piniaPluginPersistedstate);
+app.use(pinia);
 
-app.use(vuetify)
-app.use(router)
+// 4. Initialize Router
+app.use(router);
 
-app.mount('#app')
+// 5. Mount App
+app.mount("#app");

@@ -4,15 +4,6 @@ import {
 } from "./axios";
 
 import type {
-  ApiResponse,
-  Facility,
-  Department,
-  PatientLookup,
-  EligibilityResult, 
-  AuthorizationRequest,
-} from "../types/specialist.interface";
-
-import type {
   UpdateEncounterRequest
 } from "../types/documentVerification.interface";
 
@@ -20,6 +11,7 @@ import type {
   CreateAuthorizationRequest,
   AuthorizationTimeline
 } from "../types/authorization.interface";
+
 
 import type {
   AddAuthorizationServiceListRequest,
@@ -29,7 +21,18 @@ import type {
 import type {
   CreateEncounterRequest
 } from "../types/encounter.interface";
-
+import type {
+  ApiResponse,
+  Facility,
+  Department,
+  PatientLookup,
+  EligibilityResult,
+  AuthorizationRequest,
+  SpecialistReminderDto
+} from "../types/specialist.interface";
+import type {
+  AuthorizationDetails
+} from "../types/specialist.interface";
 
 export const getFacilities = async () => {
   const response =
@@ -198,6 +201,17 @@ export const getAuthorizationRequests = async (
 
   return response.data;
 };
+export const getReminders = async () => {
+
+  const response =
+    await specialistApiClient.get<
+      ApiResponse<SpecialistReminderDto[]>
+    >(
+      "/api/Authorization/reminders"
+    );
+
+  return response.data;
+};
 
 export const getAuthorizationServices = async (
   authId: number
@@ -223,4 +237,14 @@ export const getAuthorizationTimeline = async (
     );
 
   return response.data;
+};
+export const getAuthorizationDetails = async (
+  authId: number
+): Promise<AuthorizationDetails> => {
+  const response =
+    await specialistApiClient.get<
+      ApiResponse<AuthorizationDetails>
+    >(`/api/Authorization/${authId}`);
+
+  return response.data.data;
 };

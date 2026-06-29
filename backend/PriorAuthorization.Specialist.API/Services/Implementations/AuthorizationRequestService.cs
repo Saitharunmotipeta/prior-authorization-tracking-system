@@ -680,6 +680,40 @@ public class AuthorizationRequestService : IAuthorizationService
                 })
             .ToListAsync();
     }
+    public async Task<AuthorizationDetailsDto?> GetAuthorizationDetailsAsync(int authId)
+    {
+        return await _context.AuthorizationRequests
+            .AsNoTracking()
+            .Include(a => a.Payer)
+            .Include(a => a.Encounter)
+                .ThenInclude(e => e.Patient)
+            .Where(a => a.AuthId == authId)
+            .Select(a => new AuthorizationDetailsDto
+            {
+                AuthId = a.AuthId,
+
+                PatientName = a.Encounter.Patient.FullName,
+
+                PayerName = a.Payer.PayerName,
+
+                Status = ((RequestStatus)a.Status).ToString(),
+
+                Priority = ((Priority)a.Priority).ToString(),
+
+                EstimatedAmount = a.EstimatedTotalAmount,
+
+                ApprovedAmount = a.ApprovedAmount,
+
+                SubmittedAt = a.SubmittedAt,
+
+                ReviewedAt = a.ReviewedAt,
+
+                //ExpirationDate = a.ExpirationDate,
+
+                CreatedAt = a.CreatedAt
+            })
+            .FirstOrDefaultAsync();
+    }
     public async Task<List<AuthorizationListItemDto>>
 GetAwaitingReviewAuthorizationsAsync()
     {
@@ -729,5 +763,39 @@ GetAwaitingReviewAuthorizationsAsync()
                         a.SubmittedAt
                 })
             .ToListAsync();
+    }
+    public async Task<List<SpecialistReminderDto>> GetRemindersAsync()
+    {
+        var reminders = await _context.Reminders
+            .Include(r => r.Payer)
+            .Include(r => r.Auth)
+            .Where(r =>
+                r.Category == (byte)ReminderCategory.Notification &&
+                (
+                    r.Auth.Status == (byte)RequestStatus.AdditionalInfoRequired ||
+                    r.Auth.Status == (byte)RequestStatus.Approved ||
+                    r.Auth.Status == (byte)RequestStatus.Denied
+                ))
+            .OrderByDescending(r => r.UpdatedAt)
+            .ToListAsync();
+
+        return reminders.Select(r => new SpecialistReminderDto
+        {
+            ReminderId = r.ReminderId,
+            AuthId = r.AuthId,
+            PayerName = r.Payer.PayerName,
+            Status = GetStatusText((RequestStatus)r.Auth.Status),
+            UpdatedAt = r.UpdatedAt
+        }).ToList();
+    }
+    private static string GetStatusText(RequestStatus status)
+    {
+        return status switch
+        {
+            RequestStatus.AdditionalInfoRequired => "Additional Info Required",
+            RequestStatus.Approved => "Approved",
+            RequestStatus.Denied => "Denied",
+            _ => "Unknown"
+        };
     }
 }

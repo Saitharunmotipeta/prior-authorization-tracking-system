@@ -46,5 +46,31 @@ export interface CptCode {
 
 export interface IcdCode {
   icdCode: string;
-  icdDescription: string;}
-  
+  icdDescription: string;
+}
+export interface SpecialistReminderDto {
+
+  reminderId: number;
+
+  authId: number;
+
+  payerName: string;
+
+  status: string;
+
+  updatedAt: string;
+
+}
+export interface AuthorizationDetails {
+  authId: number;
+  patientName: string;
+  payerName: string;
+  status: string;
+  priority: string;
+  estimatedAmount: number;
+  approvedAmount?: number;
+  submittedAt?: string;
+  reviewedAt?: string;
+  expirationDate?: string;
+  createdAt: string;
+}

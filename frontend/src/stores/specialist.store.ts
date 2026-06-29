@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-
+import { getAuthorizationDetails } from "../api/specialist.api";
 import {
   getFacilities,
   getDepartments,
@@ -7,25 +7,34 @@ import {
   verifyEligibility,
   getAuthorizationRequests,
   getAuthorizationServices,
-  getAuthorizationTimeline
+  getAuthorizationTimeline,
+  getReminders
 } from "../api/specialist.api";
-
+import type {
+  AuthorizationService
+} from "../types/authorization-service.interface";
 import {
   getErrorMessage
 } from "../utils/error-handler";
 
+
+import type {
+AuthorizationTimeline
+} from "../types/authorization.interface";
 import type {
   Facility,
   Department,
   PatientLookup,
   EligibilityResult,
   AuthorizationRequest,
+  AuthorizationDetails,
+  SpecialistReminderDto
 } from "../types/specialist.interface";
 
-import type {
-AuthorizationTimeline
-} from "../types/authorization.interface";
-import type { AuthorizationServiceDetail } from "../types/payer.interface";
+// import type {
+// AuthorizationTimeline
+// } from "../types/authorization.interface";
+// import type { AuthorizationServiceDetail } from "../types/payer.interface";
 
 export const useSpecialistStore =
   defineStore(
@@ -42,10 +51,14 @@ export const useSpecialistStore =
   [] as AuthorizationRequest[],
 
         authorizationServices:
-          [] as AuthorizationServiceDetail[],
+          [] as AuthorizationService[],
 
-          authorizationTimeline:
-    [] as AuthorizationTimeline[],
+         
+  authorizationTimeline: [] as AuthorizationTimeline[],
+  authorizationDetails: null as AuthorizationDetails | null,
+
+    reminders:
+  [] as SpecialistReminderDto[],
 
         selectedFacilityId:
           null as number | null,
@@ -212,6 +225,34 @@ export const useSpecialistStore =
             this.loading = false;
           }
         },
+        async loadReminders() {
+  try {
+
+    this.loading = true;
+
+    this.error = null;
+
+    const response =
+      await getReminders();
+
+    this.reminders =
+      response.data;
+
+  }
+  catch (error) {
+
+    console.error(error);
+
+    this.error =
+      getErrorMessage(error);
+
+  }
+  finally {
+
+    this.loading = false;
+
+  }
+},
 
       async loadAuthorizationRequests() {
         try {
@@ -260,6 +301,30 @@ export const useSpecialistStore =
           this.loading = false;
         }
       },
+      async loadAuthorizationDetails(authId: number) {
+
+  try {
+
+    this.loading = true;
+
+    this.authorizationDetails =
+      await getAuthorizationDetails(authId);
+
+  }
+  catch (error) {
+
+    this.error =
+      getErrorMessage(error);
+
+  }
+  finally {
+
+    this.loading = false;
+
+  }
+
+},
+      
       async loadAuthorizationTimeline(
         authId: number
       ) {
