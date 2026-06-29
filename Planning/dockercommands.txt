@@ -22,3 +22,44 @@ SELECT *
 FROM AuditHistory
 WHERE auth_id = 47
 ORDER BY created_at;
+
+{
+  "success": true,
+  "message": "Executive report generated successfully.",
+  "data": {
+    "generatedAt": "2026-06-29T08:17:16.5171925Z",
+    "report": {
+      "ExecutiveSummary": "The organization faces significant challenges with low approval rates (13.76%) and high denial rates (8.39%), impacting revenue ($3.04M approved) and operational efficiency. Key issues include a 0% reminder success rate, excessive pending requests (120), and underperformance by Cigna Healthcare (0% approval). Facilities like Medical City Dallas show the lowest approval rate (6.25%), while UnitedHealthcare drives the majority of requests. Immediate action is needed to address process inefficiencies and payer-specific challenges.",
+      "OrganizationHealth": "The organization's health is compromised by a 13.76% approval rate, 8.39% denial rate, and 52.5% pending requests. The 0% reminder success rate indicates systemic process failures, limiting revenue recovery. Total encounters (301) and authorization requests (298) highlight operational scale, but inefficiencies in approval workflows and communication are critical concerns.",
+      "FacilityAnalysis": {
+        "TriStarCentennial": "Leading with 19.84% approval rate and $2.46M revenue, efficient response (4.69 days).",
+        "ResearchMedicalCenter": "Moderate performance (11.96% approval, $428K revenue), 4.92-day response.",
+        "MedicalCityDallas": "Lowest performer (6.25% approval, $144K revenue), 4.79-day response. Requires targeted process improvements."
+      },
+      "PayerAnalysis": {
+        "UnitedHealthcare": "Highest volume (271 requests, 14.39% approval), 112 pending requests needing expedited follow-up.",
+        "Aetna": "9.09% approval rate; 4 pending requests require resolution.",
+        "CignaHealthcare": "Critical risk (0% approval, 1 denial, 4 pending). Requires immediate engagement to resolve denial reasons."
+      },
+      "RevenueInsights": {
+        "TotalApprovedRevenue": 3037751.78,
+        "KeyDriver": "UnitedHealthcare contributes ~59% of approved revenue via high request volume.",
+        "Losses": "Low approval rates result in $2.56M in potential revenue from denied/pending requests."
+      },
+      "OperationalRisks": [
+        "0% reminder success rate leads to missed approvals and revenue loss.",
+        "120 pending requests risk delays in patient care and revenue collection.",
+        "Cigna's 0% approval rate threatens future revenue streams.",
+        "Variability in facility approval rates suggests inconsistent processes."
+      ],
+      "Recommendations": [
+        "Implement standardized approval criteria across facilities to improve consistency.",
+        "Overhaul reminder systems to achieve >80% success rate and reduce pending requests.",
+        "Engage Cigna Healthcare to resolve denial reasons and improve approval processes.",
+        "Conduct training for authorization staff to align with payer-specific requirements.",
+        "Prioritize pending requests from UnitedHealthcare and Aetna to reduce backlog."
+      ],
+      "ExecutiveConclusion": "Addressing process inefficiencies, improving payer communication, and fixing the reminder system are critical to reversing low approval rates and mitigating revenue risks. Immediate action on Cigna's issues and standardized workflows across facilities will enhance operational resilience and fiscal performance."
+    }
+  }
+}

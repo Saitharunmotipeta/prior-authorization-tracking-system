@@ -75,19 +75,7 @@ import {
 
       </RouterLink>
 
-      <RouterLink
-        to="/specialist/reminders"
-        class="nav-link"
-      >
-
-        <Bell
-          :size="18"
-        />
-
-        Reminders
-
-      </RouterLink>
-
+     
     </nav>
 
     <div class="sidebar-footer">
