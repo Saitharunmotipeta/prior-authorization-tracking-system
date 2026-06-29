@@ -105,3 +105,31 @@ export interface ReviewAuthorizationRequest {
 
   remarks?: string;
 }
+/* ---------------- Reminders ---------------- */
+
+export interface Reminder {
+  reminderId: number;
+
+  authId: number;
+
+  category: string;
+
+  status: string;
+
+  priority: string;
+
+  scheduledAt: string;
+
+  completedAt: string | null;
+
+  remarks: string;
+
+  updatedAt: string;
+}
+
+
+export interface ReminderListResponse {
+  pendingCount: number;
+
+  data: Reminder[];
+}

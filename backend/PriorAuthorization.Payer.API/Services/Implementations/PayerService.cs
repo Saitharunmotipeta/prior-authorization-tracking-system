@@ -397,7 +397,7 @@ public class PayerService : IPayerService
                 }
 
                 auth.Status =
-                    (byte)RequestStatus.Approved;
+    (byte)RequestStatus.Approved;
 
                 auth.ApprovedAmount =
                     dto.ApprovedAmount;
@@ -405,25 +405,39 @@ public class PayerService : IPayerService
                 auth.ReviewedAt =
                     DateTime.UtcNow;
 
+                CreateSpecialistReminder(
+                    auth,
+                    $"Authorization #{auth.AuthId} was approved.");
+
+               
+
                 break;
 
             case ReviewActionType.Deny:
 
                 auth.Status =
-                    (byte)RequestStatus.Denied;
+    (byte)RequestStatus.Denied;
 
                 auth.ReviewedAt =
                     DateTime.UtcNow;
+
+                CreateSpecialistReminder(
+                    auth,
+                    $"Authorization #{auth.AuthId} was denied.");
 
                 break;
 
             case ReviewActionType.RequestMoreInfo:
 
                 auth.Status =
-                    (byte)RequestStatus.AdditionalInfoRequired;
+    (byte)RequestStatus.AdditionalInfoRequired;
 
                 auth.ReviewedAt =
                     DateTime.UtcNow;
+
+                CreateSpecialistReminder(
+                    auth,
+                    $"Additional information requested for Authorization #{auth.AuthId}.");
 
                 break;
 
@@ -493,6 +507,22 @@ public class PayerService : IPayerService
             dto.Action);
         return true;
     }
+    private void CreateSpecialistReminder(
+    AuthorizationRequest auth,
+    string remarks)
+    {
+        _context.Reminders.Add(
+            new Reminder
+            {
+                AuthId = auth.AuthId,
+                PayerId = auth.PayerId,
+                Category = (byte)ReminderCategory.Notification,
+                Status = (byte)ReminderStatus.Pending,
+                ScheduledAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                Remarks = remarks
+            });
+    }
 
     public async Task<List<RequestLists>> GetEmergencyRequests()
     {
@@ -559,15 +589,23 @@ public class PayerService : IPayerService
             1);
 
         var reminders =
-            await _context.Reminders
-                .Where(r =>
-                    r.PayerId == 1 &&
-                    r.Status ==
-                    (byte)ReminderStatus.Pending)
-                .AsNoTracking()
-                .OrderByDescending(r =>
-                    r.ScheduledAt)
-                .ToListAsync();
+    await _context.Reminders
+        .Where(r =>
+            r.PayerId == 1 &&
+            r.Status == (byte)ReminderStatus.Pending)
+        .Join(
+            _context.AuthorizationRequests,
+            reminder => reminder.AuthId,
+            authorization => authorization.AuthId,
+            (reminder, authorization) => new
+            {
+                Reminder = reminder,
+                Priority = authorization.Priority
+            })
+        .AsNoTracking()
+        .OrderByDescending(x =>
+            x.Reminder.ScheduledAt)
+        .ToListAsync();
 
         if (!reminders.Any())
         {
@@ -582,37 +620,41 @@ public class PayerService : IPayerService
             reminders.Count;
 
         var data =
-            reminders
-                .Select(r =>
-                    new ReminderDto
-                    {
-                        ReminderId =
-                            r.ReminderId,
+    reminders
+        .Select(x =>
+            new ReminderDto
+            {
+                ReminderId =
+                    x.Reminder.ReminderId,
 
-                        AuthId =
-                            r.AuthId,
+                AuthId =
+                    x.Reminder.AuthId,
 
-                        Category =
-                            ((ReminderCategory)r.Category)
-                                .ToString(),
+                Category =
+                    ((ReminderCategory)x.Reminder.Category)
+                        .ToString(),
 
-                        Status =
-                            ((ReminderStatus)r.Status)
-                                .ToString(),
+                Status =
+                    ((ReminderStatus)x.Reminder.Status)
+                        .ToString(),
 
-                        ScheduledAt =
-                            r.ScheduledAt,
+                Priority =
+                    ((ConditionType)x.Priority)
+                        .ToString(),
 
-                        CompletedAt =
-                            r.CompletedAt,
+                ScheduledAt =
+                    x.Reminder.ScheduledAt,
 
-                        Remarks =
-                            r.Remarks,
+                CompletedAt =
+                    x.Reminder.CompletedAt,
 
-                        UpdatedAt =
-                            r.UpdatedAt
-                    })
-                .ToList();
+                Remarks =
+                    x.Reminder.Remarks,
+
+                UpdatedAt =
+                    x.Reminder.UpdatedAt
+            })
+        .ToList();
 
         var result =
             new ReminderListResponseDto

@@ -48,8 +48,6 @@ const documentStore =
 
 const {
   authorizationRequestId,
-  payerId,
-  priority,
   services,
   requestStatus,
   error,
@@ -157,26 +155,6 @@ async () => {
 
           <strong>
             {{ encounterStore.encounterId }}
-          </strong>
-        </div>
-
-        <div class="detail-row">
-          <span>
-            Payer Id
-          </span>
-
-          <strong>
-            {{ payerId }}
-          </strong>
-        </div>
-
-        <div class="detail-row">
-          <span>
-            Priority
-          </span>
-
-          <strong>
-            {{ priority }}
           </strong>
         </div>
 

@@ -154,6 +154,23 @@ public class AuthorizationController : ControllerBase
                     result,
                     "Authorizations retrieved successfully."));
     }
+    [HttpGet("{authId}")]
+    public async Task<ActionResult<ApiResponse<AuthorizationDetailsDto>>> GetAuthorizationDetails(int authId)
+    {
+        var details = await _authorizationService.GetAuthorizationDetailsAsync(authId);
+
+        if (details == null)
+        {
+            return NotFound(
+                ApiResponse<AuthorizationDetailsDto>.FailureResponse(
+                    "Authorization not found."));
+        }
+
+        return Ok(
+            ApiResponse<AuthorizationDetailsDto>.SuccessResponse(
+                details,
+                "Authorization details retrieved successfully."));
+    }
     [HttpGet("awaiting-review")]
     public async Task<IActionResult>
     GetAwaitingReview()
@@ -168,5 +185,15 @@ public class AuthorizationController : ControllerBase
                 .SuccessResponse(
                     result,
                     "Awaiting review authorizations retrieved successfully."));
+    }
+    [HttpGet("reminders")]
+    public async Task<IActionResult> GetReminders()
+    {
+        var reminders = await _authorizationService.GetRemindersAsync();
+
+        return Ok(
+            ApiResponse<List<SpecialistReminderDto>>
+                .SuccessResponse(reminders,
+                "Reminders fetched successfully."));
     }
 }
