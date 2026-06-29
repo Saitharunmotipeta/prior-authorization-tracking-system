@@ -12,11 +12,6 @@ import {
 
 <aside class="sidebar">
 
-<div class="logo">
-
-HCA Healthcare
-
-</div>
 
 <nav>
 
@@ -65,7 +60,7 @@ class="item"
 
 <span>
 
-Audit History
+Recent Activity
 
 </span>
 

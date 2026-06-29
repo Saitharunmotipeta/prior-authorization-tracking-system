@@ -95,20 +95,31 @@ const verifyDocuments = async () => {
   const success = await documentStore.verifyDocuments();
 
   if (success) {
-    router.push("/specialist/create-authorization");
+
+    // ✅ SUCCESS MESSAGE
+    snackbarMessage.value =
+      "Documents verified successfully ✅";
+
+    snackbarType.value = "success";
+    showSnackbar.value = true;
+
+    // ✅ DELAY NAVIGATION (VERY IMPORTANT)
+    setTimeout(() => {
+      router.push("/specialist/create-authorization");
+    }, 800);
+
   } else {
-   
-snackbarMessage.value =
-    documentStore.error ||
-    "All documents must be verified";
 
-  snackbarType.value = "error";
-  showSnackbar.value = true;
+    // ✅ ERROR MESSAGE
+    snackbarMessage.value =
+      documentStore.error ||
+      "All documents must be verified";
 
-
-    
+    snackbarType.value = "error";
+    showSnackbar.value = true;
   }
 };
+
 
 
 </script>
@@ -333,7 +344,7 @@ snackbarMessage.value =
             verifyDocuments()
           "
         >
-          Verify Encounter
+          Verify 
         </button>
 
  
@@ -348,6 +359,24 @@ snackbarMessage.value =
 
       
     </div>
+
+    <v-snackbar
+  v-model="showSnackbar"
+  :color="snackbarType === 'success' ? 'success' : 'error'"
+  location="top center"
+  timeout="3000"
+  elevation="10"
+>
+  <div class="snackbar-content">
+    <span class="icon">
+      {{ snackbarType === 'success' ? '✅' : '❌' }}
+    </span>
+
+    <span class="message">
+      {{ snackbarMessage || "Action completed" }}
+    </span>
+  </div>
+</v-snackbar>
 
   </div>
 </template>
@@ -564,7 +593,20 @@ textarea {
   z-index: 9999;           /* ✅ always on top */
 }
 
+.snackbar-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
+.icon {
+  font-size: 18px;
+}
+
+.message {
+  font-weight: 600;
+  font-size: 14px;
+}
 
 
 </style>

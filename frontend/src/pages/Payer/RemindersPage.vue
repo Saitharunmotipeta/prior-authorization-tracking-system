@@ -75,7 +75,18 @@ onMounted(fetchReminders);
   </label>
 </div>
   <div class="card">
-    <h1>Reminders </h1>
+   <div class="reminder-header">
+  <h2>Reminders</h2>
+
+  <v-icon
+    size="20"
+    color="grey-darken-1"
+  >
+    mdi-clock-outline
+  </v-icon>
+</div>
+
+
 
     <p v-if="loading">Loading...</p>
 
@@ -135,11 +146,13 @@ onMounted(fetchReminders);
 
 .reminder-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
-}
+  gap: 8px;
 
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+}
 .auth-id {
   font-weight: 600;
   color: #1e293b;
@@ -210,5 +223,23 @@ onMounted(fetchReminders);
 
 .toggle-text {
   color: #374151;
+
+.reminder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  font-size: 18px;
+  font-weight: 600;
+
+  margin-bottom: 12px;
+}
+
+.title {
+  color: #1e293b;
+}
+
+.icon {
+  margin-left: 6px;
 }
 </style>

@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
-import { storeToRefs } from "pinia";
-//import type { AuthorizationRequest } from "../../types/specialist.interface";
+import {
+  ref,
+  onMounted,
+  computed,
+  watch
+} from "vue";
+
+import {
+  storeToRefs
+} from "pinia";
 
 //const selectedRequest = ref<AuthorizationRequest | null>(null);
 import {
@@ -32,6 +39,105 @@ const selectedAuthId =
 
 const showTimeline =
   ref(false);
+const currentPage =
+  ref(1);
+
+const pageSize =
+  8;
+
+const searchText =
+  ref("");
+
+onMounted(() => {
+
+  specialistStore
+    .loadAuthorizationRequests();
+
+});
+
+const filteredRequests =
+computed(() => {
+
+  if (
+    !searchText.value.trim()
+  ) {
+
+    return authorizationRequests.value;
+
+  }
+
+  const keyword =
+    searchText.value
+      .toLowerCase();
+
+  return authorizationRequests.value.filter(
+    request =>
+
+      request.authId
+        .toString()
+        .includes(keyword)
+
+      ||
+
+      request.patientName
+        .toLowerCase()
+        .includes(keyword)
+
+      ||
+
+      request.payerName
+        .toLowerCase()
+        .includes(keyword)
+
+      ||
+
+      request.status
+        .toLowerCase()
+        .includes(keyword)
+
+      ||
+
+      request.priority
+        .toLowerCase()
+        .includes(keyword)
+
+  );
+
+});
+
+const totalPages =
+computed(() =>
+  Math.max(
+    1,
+    Math.ceil(
+      filteredRequests.value.length /
+      pageSize
+    )
+  )
+);
+
+const paginatedRequests =
+computed(() => {
+
+  const start =
+    (currentPage.value - 1) *
+    pageSize;
+
+  return filteredRequests.value.slice(
+    start,
+    start + pageSize
+  );
+
+});
+
+watch(
+  searchText,
+  () => {
+
+    currentPage.value = 1;
+
+  }
+);
 
 const formatDate = (
   date: string | null
@@ -64,6 +170,9 @@ const viewRequestHistory = async (authId: number) => {
 const closeHistoryModal = () => {
 
   showHistoryModal.value = false;
+  console.log("Clicked:", authId);
+
+  selectedAuthId.value = authId;
 
   showTimeline.value = false;
 
@@ -71,7 +180,12 @@ const closeHistoryModal = () => {
 
   authorizationTimeline.value = [];
 
-  specialistStore.authorizationDetails = null;
+  await specialistStore.loadAuthorizationServices(authId);
+
+  console.log(
+    "Services:",
+    authorizationServices.value
+  );
 
 };
 
@@ -640,8 +754,31 @@ v-if="specialistStore.authorizationTimeline?.length"
 class="timeline-list"
 >
 
+<div class="table-card">
+<div class="table-header">
 
+  <h3>
+    Authorization Requests
+  </h3>
 
+  <div class="toolbar">
+
+    <span class="count">
+
+      {{ filteredRequests.length }}
+      Requests
+
+    </span>
+
+    <input
+      v-model="searchText"
+      class="search-box"
+      placeholder="Search Authorization Id, Patient, Payer, Status..."
+    />
+
+  </div>
+
+</div>
 
 <div
 v-for="(event,index) in specialistStore.authorizationTimeline"
@@ -687,12 +824,136 @@ v-if="event.remarks"
 </p>
 
 
+</thead>
+<tbody>
+
+<tr
+v-for="request in paginatedRequests"
+:key="request.authId"
+>
+
+<td>
+
+{{ request.authId }}
+
+</td>
+
+<td>
+
+{{ request.patientName }}
+
+</td>
+
+<td>
+
+{{ request.payerName }}
+
+</td>
+
+<td>
+
+<span
+class="badge"
+:class="'status-' + request.status.toLowerCase().replace(/\s+/g,'-')"
+>
+
+{{ request.status }}
+
+</span>
+
+</td>
+
+<td>
+
+<span
+class="badge"
+:class="'priority-' + request.priority.toLowerCase()"
+>
+
+{{ request.priority }}
+
+</span>
+
+</td>
+
+<td>
+
+{{ request.estimatedAmount }}
+
+</td>
+
+<td>
+
+<button
+class="view-button"
+@click="viewRequestHistory(request.authId)"
+>
+
+<i class="pi pi-eye"></i>
+
+View
+
+</button>
+
+</td>
+
+</tr>
+
+<tr
+v-if="paginatedRequests.length===0"
+>
+
+<td
+colspan="7"
+class="empty-row"
+>
+
+No authorization requests found.
+
+</td>
 
 <span>
 {{formatDate(event.createdAt)}}
 </span>
 
 
+
+<div
+class="pagination"
+v-if="filteredRequests.length"
+>
+
+<button
+@click="currentPage--"
+:disabled="currentPage===1"
+>
+
+Previous
+
+</button>
+
+<span>
+
+Page
+
+{{ currentPage }}
+
+of
+
+{{ totalPages }}
+
+</span>
+
+<button
+@click="currentPage++"
+:disabled="currentPage===totalPages"
+>
+
+Next
+
+</button>
+
+</div>
 
 </div>
 
@@ -1456,5 +1717,135 @@ color:#475569;
 .timeline-content span{
 font-size:13px;
 color:#94a3b8;
+}
+
+.pagination{
+
+display:flex;
+
+justify-content: center;
+
+align-items:center;
+
+gap:16px;
+
+padding:20px;
+
+border-top:1px solid #e5e7eb;
+
+}
+
+.pagination button{
+
+padding:8px 16px;
+
+border:none;
+
+border-radius:8px;
+
+background:#2563eb;
+
+color:white;
+
+cursor:pointer;
+
+font-weight:600;
+
+}
+
+.pagination button:disabled{
+
+background:#cbd5e1;
+
+cursor:not-allowed;
+
+}
+
+.pagination span{
+
+font-weight:600;
+
+color:#475569;
+
+}
+
+.table-header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:20px;
+
+gap:20px;
+
+}
+
+.title{
+
+margin:0;
+
+font-size:22px;
+
+font-weight:600;
+
+color:#1e293b;
+
+}
+
+.toolbar{
+
+display:flex;
+
+align-items:center;
+
+gap:16px;
+
+margin-left:auto;
+
+}
+
+.count{
+
+font-size:14px;
+
+font-weight:600;
+
+color:#64748b;
+
+white-space:nowrap;
+
+}
+
+.search-box{
+
+width:320px;
+
+padding:10px 14px;
+
+border:1px solid #d1d5db;
+
+border-radius:8px;
+
+font-size:14px;
+
+background:#fff;
+
+transition:.2s;
+
+}
+
+.search-box:focus{
+
+outline:none;
+
+border-color:#2563eb;
+
+box-shadow:
+0 0 0 3px
+rgb(37 99 235 / 15%);
+
 }
 </style>

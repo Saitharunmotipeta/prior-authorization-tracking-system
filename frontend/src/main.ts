@@ -13,10 +13,20 @@ import "vuetify/styles";
 import { createVuetify } from "vuetify";
 
 
-const app = createApp(App);
+// const app = createApp(App);
+
+// const pinia = createPinia();
+// app.use(pinia);
+// pinia.use(
+//   piniaPluginPersistedstate
+// );
 
 
-const vuetify = createVuetify();
+
+// import { createVuetify } from 'vuetify';
+// import 'vuetify/styles'; 
+
+// const vuetify = createVuetify();
 
 app.use(vuetify);
 

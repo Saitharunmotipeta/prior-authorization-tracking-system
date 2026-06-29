@@ -10,10 +10,9 @@
 
         public string? Remarks { get; set; }
 
-        public string? OldValue { get; set; }
-
-        public string? NewValue { get; set; }
-
         public DateTime CreatedAt { get; set; }
-    }
+
+        public string PatientId { get; set; } 
+    public string FacilityName { get; set; } 
+}
 }
