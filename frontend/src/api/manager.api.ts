@@ -107,3 +107,15 @@ export const getDelayTrends = async (facilityId?: number) => {
 
   return response.data;
 };
+
+export const generateExecutiveReport =
+async () => {
+
+  const response =
+    await managerApiClient.post(
+      "/api/reports/executive"
+    );
+
+  return response.data;
+
+};

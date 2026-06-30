@@ -12,7 +12,8 @@ import type {
   FacilityComparison,
   TopPerformingPayer,
   PoorPerformingPayer,
-  DelayTrend
+  DelayTrend,
+  ExecutiveReport
 } from "../types/dashboard.interface";
 
 import {
@@ -23,7 +24,8 @@ import {
   getFacilityComparison,
   getTopPerformingPayers,
   getPoorPerformingPayers,
-  getDelayTrends
+  getDelayTrends,
+  generateExecutiveReport
 } from "../api/manager.api";
 
 interface ManagerDashboardState {
@@ -48,6 +50,8 @@ interface ManagerDashboardState {
   poorPerformingPayers: PoorPerformingPayer[];
 
   delayTrends: DelayTrend[];
+
+  executiveReport: ExecutiveReport | null;
 }
 
 export const useManagerDashboardStore =
@@ -79,10 +83,44 @@ export const useManagerDashboardStore =
 
           poorPerformingPayers: [],
 
-          delayTrends: []
+          delayTrends: [],
+
+          executiveReport: null
         }),
 
       actions: {
+
+        async loadExecutiveReport() {
+
+  try {
+
+    const response =
+      await generateExecutiveReport();
+
+    this.executiveReport = {
+
+      generatedAt:
+        response.data.generatedAt,
+
+      report:
+        JSON.parse(
+          response.data.report
+        )
+
+    };
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    this.error =
+      getErrorMessage(error);
+
+  }
+
+},
         async loadAllDashboardData(
           facilityId?: number
         ) {
@@ -219,6 +257,8 @@ export const useManagerDashboardStore =
 
           this.delayTrends =
             [];
+
+          this.executiveReport = null;
 
           this.error = null;
         }

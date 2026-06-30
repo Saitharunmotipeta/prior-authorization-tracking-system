@@ -9,6 +9,7 @@ from "../pages/manager/ExecutiveDashboardPage.vue";
 import FacilityPerformancePage from "../pages/manager/FacilityPerformancePage.vue";
 import PayerAnalysisPage from "../pages/manager/PayerAnalysisPage.vue";
 import AuthorizationAnalysisPage from "../pages/manager/AuthorizationAnalysisPage.vue";
+import ExecutiveReportPage from "../pages/manager/ExecutiveReportPage.vue";
 
 const managerRoutes: RouteRecordRaw[] = [
   {
@@ -38,6 +39,10 @@ const managerRoutes: RouteRecordRaw[] = [
         path: "authorizations",
         name: "AuthorizationAnalysis",
         component: AuthorizationAnalysisPage
+      },
+      {
+        path: "/manager/executive-report",
+        component: ExecutiveReportPage
       }
     ]
   }
