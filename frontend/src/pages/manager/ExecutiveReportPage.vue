@@ -12,8 +12,7 @@ const managerDashboardStore =
 
 const {
   executiveReport,
-  loading,
-  error
+  loading
 } =
   storeToRefs(
     managerDashboardStore
@@ -209,19 +208,6 @@ const generateReport =
 
 }
 
-.error-card{
-
-  padding:18px;
-
-  margin-bottom:24px;
-
-  border-radius:10px;
-
-  background:#fee2e2;
-
-  color:#b91c1c;
-
-}
 
 .report-card{
 
