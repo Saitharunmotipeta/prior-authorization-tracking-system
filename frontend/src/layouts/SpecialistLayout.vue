@@ -18,12 +18,8 @@ from "../components/common/AppSidebar.vue";
         <div class="topbar-left">
 
           <h2>
-            HCA Prior Authorization
-          </h2>
-
-          <span>
             Specialist Portal
-          </span>
+          </h2>
 
         </div>
 

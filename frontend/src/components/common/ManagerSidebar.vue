@@ -3,7 +3,8 @@ import {
   LayoutDashboard,
   Building2,
   ShieldCheck,
-  FileBarChart2
+  FileBarChart2,
+  FileText
 } from "lucide-vue-next";
 </script>
 
@@ -59,6 +60,22 @@ import {
         <FileBarChart2 :size="18" />
         <span>Authorization Analysis</span>
       </RouterLink>
+
+      <RouterLink
+  to="/manager/executive-report"
+  class="menu-item"
+  active-class="active-link"
+>
+
+  <FileText
+    :size="18"
+  />
+
+  <span>
+    Executive Report
+  </span>
+
+</RouterLink>
 
     </nav>
 

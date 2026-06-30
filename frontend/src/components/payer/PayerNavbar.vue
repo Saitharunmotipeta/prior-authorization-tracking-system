@@ -16,7 +16,7 @@ import {
     />
 
     <span class="logo">
-      HCA Healthcare
+Healthcare
     </span>
 
   </div>

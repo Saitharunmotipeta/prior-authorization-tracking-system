@@ -73,3 +73,9 @@ export interface DelayTrend {
   sixToTenDays: number;
   moreThanTenDays: number;
 }
+
+export interface ExecutiveReport {
+  generatedAt: string;
+
+  report: Record<string, string>;
+}
